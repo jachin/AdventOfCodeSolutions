@@ -12,41 +12,19 @@ def can_react(first, second):
 
 
 def react(polymer):
-    buffer = deque()
-    new_polymer = deque()
     current = ''
     previous = ''
-    has_reaction = False
-    for p in polymer:
-        if has_reaction:
-            new_polymer.append(p)
-            continue
+    for i, p in enumerate(polymer):
         current = p
         if can_react(previous, current):
-            current = ''
-            new_polymer.pop()
-            has_reaction = True
-        else:
-            previous = current
-            new_polymer.append(p)
+            return polymer[:i - 1] + polymer[i+1:]
+        previous = current
+    return polymer
 
-    return ''.join(new_polymer)
-
-
-# polymer = 'dabAcCaCBAcCcaDA'
-# while True:
-#     print(polymer)
-#     previous_polymer = polymer
-#     polymer = react(polymer)
-#     if len(previous_polymer) == len(polymer):
-#         print(len(previous_polymer))
-#         break
 
 for line in fileinput.input():
     polymer = line.strip()
-    # print(polymer)
     while True:
-        # print(polymer)
         previous_polymer = polymer
         polymer = react(polymer)
         if len(previous_polymer) == len(polymer):
