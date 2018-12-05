@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
 import fileinput
-import cProfile
 from functools import lru_cache
 
 from collections import deque
@@ -17,29 +16,32 @@ def can_react(first, second):
     return False
 
 
-def react(polymer):
+def react(polymer, start=0):
     current = ''
     previous = ''
-    for p in polymer:
-        current = p
+    # print(start, len(polymer))
+    for i in range(start, len(polymer)):
+        current = polymer[i]
         if can_react(previous, current):
             (head, pattern, tail) = polymer.partition(previous + current)
-            return '{}{}'.format(head, tail)
+            return (i - 2, '{}{}'.format(head, tail))
         previous = current
-    return polymer
+    return (i - 2, polymer)
 
 
 def main():
     for line in fileinput.input():
         polymer = line.strip()
+        i = 0
         while True:
             previous_polymer = polymer
-            polymer = react(polymer)
+            (i, polymer) = react(polymer, i)
+            if i < 0:
+                i = 0
             if len(previous_polymer) == len(polymer):
                 print(len(previous_polymer))
                 break
 
 
 if __name__ == '__main__':
-    #cProfile.run('main()')
     main()
