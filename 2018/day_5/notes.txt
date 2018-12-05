@@ -1,0 +1,125 @@
+
+
+         495021367 function calls in 113.917 seconds
+
+   Ordered by: standard name
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000  113.917  113.917 <string>:1(<module>)
+        1    0.000    0.000    0.000    0.000 abc.py:137(__instancecheck__)
+        1    0.000    0.000    0.000    0.000 abc.py:141(__subclasscheck__)
+        8    0.000    0.000    0.000    0.000 codecs.py:319(decode)
+        1    0.000    0.000    0.000    0.000 fileinput.py:188(__init__)
+        1    0.000    0.000    0.000    0.000 fileinput.py:247(__iter__)
+        2    0.000    0.000    0.000    0.000 fileinput.py:250(__next__)
+        1    0.000    0.000    0.000    0.000 fileinput.py:269(nextfile)
+        2    0.000    0.000    0.000    0.000 fileinput.py:310(_readline)
+        1    0.000    0.000    0.000    0.000 fileinput.py:371(lineno)
+        1    0.000    0.000    0.000    0.000 fileinput.py:83(input)
+        1    0.000    0.000    0.000    0.000 os.py:1076(__subclasshook__)
+    19719   18.930    0.001  113.876    0.006 react_polymer.py:15(react)
+        1    0.032    0.032  113.917  113.917 react_polymer.py:27(main)
+104661847   62.435    0.000   94.720    0.000 react_polymer.py:9(can_react)
+        1    0.000    0.000    0.000    0.000 {built-in method _abc._abc_instancecheck}
+        1    0.000    0.000    0.000    0.000 {built-in method _abc._abc_subclasscheck}
+        8    0.000    0.000    0.000    0.000 {built-in method _codecs.utf_8_decode}
+        1    0.000    0.000  113.917  113.917 {built-in method builtins.exec}
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.hasattr}
+        2    0.000    0.000    0.000    0.000 {built-in method builtins.isinstance}
+    39439    0.008    0.000    0.008    0.000 {built-in method builtins.len}
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.print}
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+    19718    0.061    0.000    0.061    0.000 {method 'format' of 'str' objects}
+131157408   10.106    0.000   10.106    0.000 {method 'islower' of 'str' objects}
+157370117   12.173    0.000   12.173    0.000 {method 'isupper' of 'str' objects}
+101733360   10.006    0.000   10.006    0.000 {method 'lower' of 'str' objects}
+    19718    0.164    0.000    0.164    0.000 {method 'partition' of 'str' objects}
+        2    0.000    0.000    0.000    0.000 {method 'readline' of '_io.TextIOWrapper' objects}
+        1    0.000    0.000    0.000    0.000 {method 'strip' of 'str' objects}
+
+
+
+
+After a tweak to can_react
+
+
+
+         364970574 function calls in 84.302 seconds
+
+   Ordered by: standard name
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000   84.302   84.302 <string>:1(<module>)
+        1    0.000    0.000    0.000    0.000 abc.py:137(__instancecheck__)
+        1    0.000    0.000    0.000    0.000 abc.py:141(__subclasscheck__)
+        8    0.000    0.000    0.000    0.000 codecs.py:319(decode)
+        1    0.000    0.000    0.000    0.000 fileinput.py:188(__init__)
+        1    0.000    0.000    0.000    0.000 fileinput.py:247(__iter__)
+        2    0.000    0.000    0.000    0.000 fileinput.py:250(__next__)
+        1    0.000    0.000    0.000    0.000 fileinput.py:269(nextfile)
+        2    0.000    0.000    0.000    0.000 fileinput.py:310(_readline)
+        1    0.000    0.000    0.000    0.000 fileinput.py:371(lineno)
+        1    0.000    0.000    0.000    0.000 fileinput.py:83(input)
+        1    0.000    0.000    0.000    0.000 os.py:1076(__subclasshook__)
+    19719   18.780    0.001   84.270    0.004 react_polymer.py:19(react)
+        1    0.026    0.026   84.302   84.302 react_polymer.py:31(main)
+104661847   44.236    0.000   65.282    0.000 react_polymer.py:9(can_react)
+        1    0.000    0.000    0.000    0.000 {built-in method _abc._abc_instancecheck}
+        1    0.000    0.000    0.000    0.000 {built-in method _abc._abc_subclasscheck}
+        8    0.000    0.000    0.000    0.000 {built-in method _codecs.utf_8_decode}
+        1    0.000    0.000   84.302   84.302 {built-in method builtins.exec}
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.hasattr}
+        2    0.000    0.000    0.000    0.000 {built-in method builtins.isinstance}
+    39439    0.006    0.000    0.006    0.000 {built-in method builtins.len}
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.print}
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+    19718    0.053    0.000    0.053    0.000 {method 'format' of 'str' objects}
+ 51933858    4.243    0.000    4.243    0.000 {method 'islower' of 'str' objects}
+157389836   11.460    0.000   11.460    0.000 {method 'isupper' of 'str' objects}
+ 25438297    2.668    0.000    2.668    0.000 {method 'lower' of 'str' objects}
+    19718    0.154    0.000    0.154    0.000 {method 'partition' of 'str' objects}
+        2    0.000    0.000    0.000    0.000 {method 'readline' of '_io.TextIOWrapper' objects}
+        1    0.000    0.000    0.000    0.000 {method 'strip' of 'str' objects}
+ 25448101    2.675    0.000    2.675    0.000 {method 'upper' of 'str' objects}
+
+
+After adding caching to can_react
+
+
+224388159 function calls in 70.937 seconds
+
+   Ordered by: standard name
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000   70.937   70.937 <string>:1(<module>)
+        1    0.000    0.000    0.000    0.000 abc.py:137(__instancecheck__)
+        1    0.000    0.000    0.000    0.000 abc.py:141(__subclasscheck__)
+        8    0.000    0.000    0.000    0.000 codecs.py:319(decode)
+        1    0.000    0.000    0.000    0.000 fileinput.py:188(__init__)
+        1    0.000    0.000    0.000    0.000 fileinput.py:247(__iter__)
+        2    0.000    0.000    0.000    0.000 fileinput.py:250(__next__)
+        1    0.000    0.000    0.000    0.000 fileinput.py:269(nextfile)
+        2    0.000    0.000    0.000    0.000 fileinput.py:310(_readline)
+        1    0.000    0.000    0.000    0.000 fileinput.py:371(lineno)
+        1    0.000    0.000    0.000    0.000 fileinput.py:83(input)
+        1    0.000    0.000    0.000    0.000 os.py:1076(__subclasshook__)
+    19719   29.386    0.001   70.902    0.004 react_polymer.py:20(react)
+        1    0.028    0.028   70.937   70.937 react_polymer.py:32(main)
+ 64283178   27.957    0.000   41.300    0.000 react_polymer.py:9(can_react)
+        1    0.000    0.000    0.000    0.000 {built-in method _abc._abc_instancecheck}
+        1    0.000    0.000    0.000    0.000 {built-in method _abc._abc_subclasscheck}
+        8    0.000    0.000    0.000    0.000 {built-in method _codecs.utf_8_decode}
+        1    0.000    0.000   70.937   70.937 {built-in method builtins.exec}
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.hasattr}
+        2    0.000    0.000    0.000    0.000 {built-in method builtins.isinstance}
+    39439    0.007    0.000    0.007    0.000 {built-in method builtins.len}
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.print}
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+    19718    0.060    0.000    0.060    0.000 {method 'format' of 'str' objects}
+ 32092960    2.687    0.000    2.687    0.000 {method 'islower' of 'str' objects}
+ 96473396    7.303    0.000    7.303    0.000 {method 'isupper' of 'str' objects}
+ 15786269    1.682    0.000    1.682    0.000 {method 'lower' of 'str' objects}
+    19718    0.157    0.000    0.157    0.000 {method 'partition' of 'str' objects}
+        2    0.000    0.000    0.000    0.000 {method 'readline' of '_io.TextIOWrapper' objects}
+        1    0.000    0.000    0.000    0.000 {method 'strip' of 'str' objects}
+ 15653721    1.670    0.000    1.670    0.000 {method 'upper' of 'str' objects}

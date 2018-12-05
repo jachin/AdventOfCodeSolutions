@@ -19,7 +19,6 @@ def can_react(first, second):
 def react(polymer, start=0):
     current = ''
     previous = ''
-    # print(start, len(polymer))
     for i in range(start, len(polymer)):
         current = polymer[i]
         if can_react(previous, current):
