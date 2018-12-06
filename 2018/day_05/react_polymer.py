@@ -5,6 +5,7 @@ from functools import lru_cache
 
 from collections import deque
 
+
 @lru_cache(maxsize=1024)
 def can_react(first, second):
     if first.isupper():
