@@ -13,7 +13,7 @@ class Destination:
         self.is_infinite = is_infinite
         self.area = 0
         self.region = set()
-        self.letter = random.choice(list(string.ascii_lowercase))
+        self.letter = random.choice(list(string.ascii_letters))
 
     def __lt__(self, other):
         return len(self.region) < len(other.region)
@@ -35,8 +35,14 @@ def find_areas(width, height, destinations):
                     y
                 )
             closest_destination = min(distances, key=distances.get)
-            closest_destination.area += 1
-            closest_destination.region.add((x, y))
+            closest_destinations = sorted(distances.items(), key=lambda x: x[1])
+            closest = closest_destinations[0]
+            second_closest = closest_destinations[1]
+            # print(closest)
+            # print(second_closest)
+            if closest[1] != second_closest[1]:
+                closest_destination.area += 1
+                closest_destination.region.add((x, y))
     return destinations
 
 
@@ -50,7 +56,7 @@ def output_area(width, height, destinations):
         for x in range(width):
             line = []
             for y in range(height):
-                letter = data[(x, y)]
+                letter = data.get((x, y), '.')
                 line.append(letter)
             print(''.join(line), file=f)
     return data
@@ -72,32 +78,22 @@ def main():
     destinations = find_areas(max_x, max_y, destinations)
     area = output_area(max_x, max_y, destinations)
     edges = set()
-    for x in range(max_x):
+    for x in range(max_x + 1):
         for y in (0, max_y):
             edges.add((x, y))
     for x in (0, max_x):
-        for y in range(max_y):
+        for y in range(max_y + 1):
             edges.add((x, y))
 
     for destination in destinations:
         if len(edges.intersection(destination.region)) > 0:
             destination.is_infinite = True
-        #     print("{} is infinite".format(destination.letter))
-        # else:
-        #     print("{} is NOT infinite".format(destination.letter))
-        #     print("area: {}".format(destination.area))
-        #print(edges.intersection(destination.region))
 
     canidates = list(filter(lambda x: not x.is_infinite, destinations))
 
-    print(len(destinations))
-    print(len(canidates))
-
     canidates.sort()
 
-    print(canidates[0].area)
     print(canidates[-1].area)
-    print(canidates[-1].letter)
 
 
 if __name__ == '__main__':
