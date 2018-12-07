@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
 import fileinput
-from colorama import init, Fore, Back, Style
 import random
 import string
 
@@ -97,5 +96,4 @@ def main():
 
 
 if __name__ == '__main__':
-    init()
     main()
