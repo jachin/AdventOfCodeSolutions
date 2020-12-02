@@ -20,21 +20,17 @@ multiply triplet =
 
 generateUnique : List Int -> List Triplet
 generateUnique numbers =
-    List.Extra.uniquePairs numbers
+    List.Extra.cartesianProduct
+        [ numbers, numbers, numbers ]
         |> List.map
-            (\pair ->
-                List.map
-                    (\n ->
-                        if Tuple.first pair /= n && Tuple.second pair /= n then
-                            new (Tuple.first pair) (Tuple.second pair) n
+            (\a ->
+                case a of
+                    x :: y :: z :: _ ->
+                        new x y z
 
-                        else
-                            []
-                    )
-                    numbers
+                    _ ->
+                        new 0 0 0
             )
-        |> List.concat
-        |> List.filter (\l -> l /= [])
         |> List.Extra.unique
 
 

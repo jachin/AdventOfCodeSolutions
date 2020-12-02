@@ -231,9 +231,9 @@ solvePart1 =
 
 solvePart2 : Int
 solvePart2 =
-    Triplet.generateUnique part1
-        |> List.filter
+    List.Extra.cartesianProduct
+        [ part1, part1, part1 ]
+        |> List.Extra.find
             (\triplet -> Triplet.sum triplet == 2020)
-        |> List.head
         |> Maybe.withDefault (Triplet.new 0 0 0)
         |> Triplet.multiply
