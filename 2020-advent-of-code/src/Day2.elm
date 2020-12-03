@@ -2,6 +2,7 @@ module Day2 exposing (..)
 
 import Browser
 import Html exposing (div, h1, h2, p, text)
+import List.Extra
 import Parser exposing ((|.), (|=), Parser)
 
 
@@ -1080,12 +1081,35 @@ checkPassword password =
     password.min <= String.length filteredChars && String.length filteredChars <= password.max
 
 
+checkPassword2 : Password -> Bool
+checkPassword2 password =
+    let
+        char =
+            String.toList password.char |> List.head |> Maybe.withDefault '_'
+
+        p1Char : Char
+        p1Char =
+            password.password
+                |> String.toList
+                |> List.Extra.getAt (password.min - 1)
+                |> Maybe.withDefault '_'
+
+        p2Char : Char
+        p2Char =
+            password.password
+                |> String.toList
+                |> List.Extra.getAt (password.max - 1)
+                |> Maybe.withDefault '_'
+    in
+    xor (char == p1Char) (char == p2Char)
+
+
 init : Model
 init =
     { part1Test = solvePart1 testData
     , part1 = solvePart1 data
-    , part2 = solvePart2
-    , part2Test = solvePart2
+    , part2Test = solvePart2 testData
+    , part2 = solvePart2 data
     }
 
 
@@ -1103,6 +1127,7 @@ view model =
         , p [] [ text (String.fromInt model.part1Test) ]
         , p [] [ text (String.fromInt model.part1) ]
         , h2 [] [ text "Part 2" ]
+        , p [] [ text (String.fromInt model.part2Test) ]
         , p [] [ text (String.fromInt model.part2) ]
         ]
 
@@ -1115,5 +1140,9 @@ solvePart1 data_ =
         |> List.length
 
 
-solvePart2 =
-    0
+solvePart2 data_ =
+    data_
+        |> List.map (\str -> Parser.run parsePassword str)
+        |> List.map (Result.map (\r -> checkPassword2 r))
+        |> List.filter (\r -> r == Ok True)
+        |> List.length
