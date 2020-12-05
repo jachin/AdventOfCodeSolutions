@@ -2,8 +2,9 @@ module Day4 exposing (..)
 
 import Browser
 import Html exposing (div, h1, h2, p, text)
+import List.Extra
 import Maybe.Extra
-import Parser exposing ((|.), Parser)
+import Parser exposing ((|.), (|=), Parser)
 
 
 main =
@@ -26,8 +27,8 @@ init : Model
 init =
     { part1Test = solvePart1 testData
     , part1 = solvePart1 data
-    , part2Test = solvePart2 testData
-    , part2 = solvePart2 testData
+    , part2Test = solvePart2 testData2
+    , part2 = solvePart2 data
     }
 
 
@@ -54,7 +55,7 @@ parseFields : String -> List Field
 parseFields document =
     document
         |> String.split " "
-        |> List.map (\str -> Parser.run fieldParser str)
+        |> List.map (\str -> String.trim str |> Parser.run fieldParser)
         |> List.map Result.toMaybe
         |> Maybe.Extra.values
 
@@ -80,59 +81,214 @@ parseChar =
         |> Parser.getChompedString
 
 
+parseHexChar : Parser String
+parseHexChar =
+    Parser.succeed ()
+        |. Parser.chompWhile (\c -> Char.isHexDigit c && (Char.isLower c || Char.isDigit c))
+        |> Parser.getChompedString
+        |> Parser.andThen
+            (\str ->
+                if String.length str > 6 then
+                    Parser.problem "Hex String is too long"
+
+                else
+                    Parser.succeed str
+            )
+
+
+parsePassportNumber : Parser String
+parsePassportNumber =
+    Parser.succeed ()
+        |. Parser.chompWhile (\c -> Char.isDigit c)
+        |> Parser.getChompedString
+        |> Parser.andThen
+            (\str ->
+                if String.length str == 9 then
+                    Parser.succeed str
+
+                else
+                    Parser.problem "Passport number is not the right length."
+            )
+
+
 birthYearParser : Parser Field
 birthYearParser =
     Parser.succeed BirthYear
         |. Parser.symbol "byr:"
-        |. parseChar
+        |. birthYearNumberParser
+
+
+birthYearNumberParser : Parser Int
+birthYearNumberParser =
+    Parser.int
+        |> Parser.andThen
+            (\i ->
+                if i >= 1920 && i <= 2002 then
+                    Parser.succeed i
+
+                else
+                    Parser.problem "Invalid date of birth"
+            )
 
 
 issueYearParser : Parser Field
 issueYearParser =
     Parser.succeed IssueYear
         |. Parser.symbol "iyr:"
-        |. parseChar
+        |. issueYearNumberParser
+
+
+issueYearNumberParser : Parser Int
+issueYearNumberParser =
+    Parser.int
+        |> Parser.andThen
+            (\i ->
+                if i >= 2010 && i <= 2020 then
+                    Parser.succeed i
+
+                else
+                    Parser.problem "Invalid parser year"
+            )
 
 
 expirationYearParser : Parser Field
 expirationYearParser =
     Parser.succeed ExpirationYear
         |. Parser.symbol "eyr:"
-        |. parseChar
+        |. expirationYearNumberParser
+
+
+expirationYearNumberParser : Parser Int
+expirationYearNumberParser =
+    Parser.int
+        |> Parser.andThen
+            (\i ->
+                if i >= 2020 && i <= 2030 then
+                    Parser.succeed i
+
+                else
+                    Parser.problem "Invalid parser year"
+            )
 
 
 heightParser : Parser Field
 heightParser =
     Parser.succeed Height
         |. Parser.symbol "hgt:"
-        |. parseChar
+        |= humanHeightParser
+
+
+humanHeightParser : Parser (Maybe HumanHeight)
+humanHeightParser =
+    Parser.succeed makeHumanHeight
+        |= Parser.int
+        |= parseChar
+
+
+makeHumanHeight : Int -> String -> Maybe HumanHeight
+makeHumanHeight int smb =
+    if smb == "cm" then
+        if int >= 150 && int <= 193 then
+            Just (Cm int)
+
+        else
+            Nothing
+
+    else if smb == "in" then
+        if int >= 59 && int <= 76 then
+            Just (In int)
+
+        else
+            Nothing
+
+    else
+        Nothing
+
+
+humanCmParser : Parser Int
+humanCmParser =
+    Parser.int
+        |> Parser.andThen
+            (\i ->
+                if i >= 150 && i <= 193 then
+                    Parser.succeed i
+
+                else
+                    Parser.problem "Invalid cm height"
+            )
+
+
+humanInchParser : Parser Int
+humanInchParser =
+    Parser.int
+        |> Parser.andThen
+            (\i ->
+                if i >= 59 && i <= 76 then
+                    Parser.succeed i
+
+                else
+                    Parser.problem "Invalid inch height"
+            )
 
 
 hairColorParser : Parser Field
 hairColorParser =
     Parser.succeed HairColor
         |. Parser.symbol "hcl:"
-        |. parseChar
+        |. Parser.symbol "#"
+        |. parseHexChar
 
 
 eyeColorParser : Parser Field
 eyeColorParser =
     Parser.succeed EyeColor
         |. Parser.symbol "ecl:"
-        |. parseChar
+        |. humanEyeColorParser
+
+
+humanEyeColorParser : Parser String
+humanEyeColorParser =
+    parseChar
+        |> Parser.andThen
+            (\str ->
+                case str of
+                    "amb" ->
+                        Parser.succeed str
+
+                    "blu" ->
+                        Parser.succeed str
+
+                    "brn" ->
+                        Parser.succeed str
+
+                    "gry" ->
+                        Parser.succeed str
+
+                    "grn" ->
+                        Parser.succeed str
+
+                    "hzl" ->
+                        Parser.succeed str
+
+                    "oth" ->
+                        Parser.succeed str
+
+                    _ ->
+                        Parser.problem ("Invalid hair color: " ++ str)
+            )
 
 
 passportIdParser : Parser Field
 passportIdParser =
     Parser.succeed PassportId
         |. Parser.symbol "pid:"
-        |. parseChar
+        |. parsePassportNumber
 
 
 countryIdParser : Parser Field
 countryIdParser =
     Parser.succeed CountryId
-        |. Parser.symbol "pid:"
+        |. Parser.symbol "cid:"
         |. parseChar
 
 
@@ -141,7 +297,17 @@ isValidDocument fields =
     List.member BirthYear fields
         && List.member IssueYear fields
         && List.member ExpirationYear fields
-        && List.member Height fields
+        && List.Extra.count
+            (\f ->
+                case f of
+                    Height (Just _) ->
+                        True
+
+                    _ ->
+                        False
+            )
+            fields
+        > 0
         && List.member EyeColor fields
         && List.member HairColor fields
         && List.member PassportId fields
@@ -149,27 +315,72 @@ isValidDocument fields =
 
 solvePart1 data_ =
     String.split "\n\n" data_
-        |> Debug.log "documents"
         |> List.map parseFields
-        |> Debug.log "fields"
         |> List.filter isValidDocument
-        |> Debug.log "isValidDocument"
         |> List.length
 
 
 solvePart2 data_ =
-    0
+    let
+        _ =
+            Debug.log "Result test 1" (Parser.run fieldParser "hcl:#b6652a")
+
+        _ =
+            Debug.log "Result test 2" (Parser.run fieldParser "hcl:z")
+
+        _ =
+            Debug.log "Result test 3" (Parser.run fieldParser "hcl:#733820")
+
+        _ =
+            Debug.log "Result test 4" (Parser.run fieldParser "pid:295386055")
+
+        _ =
+            Debug.log "Result test 6" (Parser.run fieldParser "pid:00000000")
+
+        _ =
+            Debug.log "Result test 6" (Parser.run fieldParser "cid:")
+
+        _ =
+            Debug.log "Result test 7" (Parser.run fieldParser "cid:123")
+
+        _ =
+            Debug.log "Valid Birth Year" (Parser.run fieldParser "byr:2002")
+
+        _ =
+            Debug.log "Invalid Birth Year" (Parser.run fieldParser "byr:2003")
+
+        _ =
+            Debug.log "Valid Height 60in" (Parser.run fieldParser "hgt:60in")
+
+        _ =
+            Debug.log "Valid Height 190cm" (Parser.run fieldParser "hgt:190cm")
+
+        _ =
+            Debug.log "invalid Height 190in" (Parser.run fieldParser "hgt:190in")
+
+        _ =
+            Debug.log "invalid Height 190" (Parser.run fieldParser "hgt:190")
+    in
+    String.split "\n\n" data_
+        |> List.map parseFields
+        |> List.filter isValidDocument
+        |> List.length
 
 
 type Field
     = BirthYear
     | IssueYear
     | ExpirationYear
-    | Height
+    | Height (Maybe HumanHeight)
     | EyeColor
     | HairColor
     | PassportId
     | CountryId
+
+
+type HumanHeight
+    = Cm Int
+    | In Int
 
 
 type alias Passport =
@@ -197,6 +408,35 @@ testData =
 
        hcl:#cfa07d eyr:2025 pid:166559648
        iyr:2011 ecl:brn hgt:59in
+"""
+
+
+testData2 =
+    """eyr:1972 cid:100
+hcl:#18171d ecl:amb hgt:170 pid:186cm iyr:2018 byr:1926
+
+iyr:2019
+hcl:#602927 eyr:1967 hgt:170cm
+ecl:grn pid:012533040 byr:1946
+
+hcl:dab227 iyr:2012
+ecl:brn hgt:182cm pid:021572410 eyr:2020 byr:1992 cid:277
+
+hgt:59cm ecl:zzz
+eyr:2038 hcl:74454a iyr:2023
+pid:3556412378 byr:2007
+Here are some valid passports:
+
+pid:087499704 hgt:74in ecl:grn iyr:2012 eyr:2030 byr:1980
+hcl:#623a2f
+
+eyr:2029 ecl:blu cid:129 byr:1989
+iyr:2014 pid:896056539 hcl:#a97842 hgt:165cm
+
+hcl:#888785
+hgt:164cm byr:2001 iyr:2015 cid:88
+pid:545766238 ecl:hzl
+eyr:2022
 """
 
 
