@@ -1,6 +1,7 @@
 module Day7 exposing (..)
 
 import Browser
+import Graph exposing (..)
 import Html exposing (div, h1, h2, p, text)
 import List.Extra
 import Maybe.Extra
@@ -63,24 +64,28 @@ parseChars =
 
 
 type Rule
-    = Rule Bag (List ( Int, Bag ))
+    = Rule Bag (List Bag)
 
 
-rulesParser : Parser (List ( Int, Rule ))
-rulesParser =
+bagRulesParser : Parser (List Bag)
+bagRulesParser =
     let
-        helper revRules =
+        helper revBags =
             Parser.oneOf
-                [ Parser.succeed (\( int, rule ) -> Parser.Loop (( int, rule ) :: revRules))
-                    |= Parser.int
+                [ Parser.succeed (\bag -> Parser.Loop (bag :: revBags))
                     |. Parser.spaces
-                    |= ruleParser
-                    |. Parser.symbol ","
+                    |. Parser.int
+                    |. Parser.spaces
+                    |= bagParser
+                    |. Parser.oneOf
+                        [ Parser.symbol ","
+                        , Parser.symbol "."
+                        ]
                 , Parser.succeed ()
-                    |> Parser.map (\_ -> Done (List.reverse revStmts))
+                    |> Parser.map (\_ -> Parser.Done (List.reverse revBags))
                 ]
     in
-    Parser.loop []
+    Parser.loop [] helper
 
 
 ruleParser : Parser Rule
@@ -88,6 +93,9 @@ ruleParser =
     Parser.succeed Rule
         |= bagParser
         |. Parser.spaces
+        |. Parser.symbol "contain"
+        |. Parser.spaces
+        |= bagRulesParser
 
 
 bagParser : Parser Bag
@@ -96,12 +104,60 @@ bagParser =
         |= parseChars
         |. Parser.spaces
         |= parseChars
+        |. Parser.spaces
+        |. Parser.oneOf
+            [ Parser.symbol "bags"
+            , Parser.symbol "bag"
+            ]
+
+
+bagsFromRule : Rule -> List Bag
+bagsFromRule (Rule bag bags) =
+    bag :: bags
 
 
 solvePart1 data_ =
     let
-        _ =
+        rules : List Rule
+        rules =
             Debug.log "data" data_
+                |> List.map (\str -> String.trim str |> Parser.run ruleParser)
+                |> Debug.log "rules"
+                |> List.filterMap Result.toMaybe
+
+        bags =
+            List.map bagsFromRule rules
+                |> List.concat
+                |> List.Extra.uniqueBy (\(Bag adjective color) -> adjective ++ color)
+
+        nodes =
+            List.indexedMap (\i bag -> Node i bag) bags
+
+        getBagIndex needle =
+            List.Extra.elemIndex needle bags
+
+        makeEdge bag1 bag2 =
+            Maybe.map3
+                Edge
+                (getBagIndex bag1)
+                (getBagIndex bag2)
+                (Just "")
+
+        edges =
+            rules
+                |> List.map (\(Rule bag smallerBags) -> smallerBags |> List.map (\smallerBag -> makeEdge bag smallerBag))
+                |> List.concat
+                |> Maybe.Extra.values
+                |> Debug.log "edges"
+
+        bagToString (Bag adjective color) =
+            adjective ++ " " ++ color
+
+        graph =
+            Graph.fromNodesAndEdges nodes edges
+
+        _ =
+            Debug.log "graph" (toString (\bag -> Just (bagToString bag)) (\_ -> Just "") graph)
     in
     0
 
