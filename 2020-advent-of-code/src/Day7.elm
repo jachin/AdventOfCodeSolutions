@@ -56,6 +56,10 @@ type Bag
     = Bag String String
 
 
+type SmallerBag
+    = SmallerBag Int String String
+
+
 parseChars : Parser String
 parseChars =
     Parser.succeed ()
@@ -64,19 +68,17 @@ parseChars =
 
 
 type Rule
-    = Rule Bag (List Bag)
+    = Rule Bag (List SmallerBag)
 
 
-bagRulesParser : Parser (List Bag)
+bagRulesParser : Parser (List SmallerBag)
 bagRulesParser =
     let
         helper revBags =
             Parser.oneOf
                 [ Parser.succeed (\bag -> Parser.Loop (bag :: revBags))
                     |. Parser.spaces
-                    |. Parser.int
-                    |. Parser.spaces
-                    |= bagParser
+                    |= smallerBagParser
                     |. Parser.oneOf
                         [ Parser.symbol ","
                         , Parser.symbol "."
@@ -98,6 +100,21 @@ ruleParser =
         |= bagRulesParser
 
 
+smallerBagParser : Parser SmallerBag
+smallerBagParser =
+    Parser.succeed SmallerBag
+        |= Parser.int
+        |. Parser.spaces
+        |= parseChars
+        |. Parser.spaces
+        |= parseChars
+        |. Parser.spaces
+        |. Parser.oneOf
+            [ Parser.symbol "bags"
+            , Parser.symbol "bag"
+            ]
+
+
 bagParser : Parser Bag
 bagParser =
     Parser.succeed Bag
@@ -112,17 +129,18 @@ bagParser =
 
 
 bagsFromRule : Rule -> List Bag
-bagsFromRule (Rule bag bags) =
-    bag :: bags
+bagsFromRule (Rule bag smallerBags) =
+    smallerBags
+        |> List.map (\(SmallerBag _ adjc color) -> Bag adjc color)
+        |> List.append [ bag ]
 
 
 solvePart1 data_ =
     let
         rules : List Rule
         rules =
-            Debug.log "data" data_
+            data_
                 |> List.map (\str -> String.trim str |> Parser.run ruleParser)
-                |> Debug.log "rules"
                 |> List.filterMap Result.toMaybe
 
         bags =
@@ -136,34 +154,95 @@ solvePart1 data_ =
         getBagIndex needle =
             List.Extra.elemIndex needle bags
 
+        getSmallerBagIndex (SmallerBag _ adjc color) =
+            getBagIndex (Bag adjc color)
+
         makeEdge bag1 bag2 =
             Maybe.map3
                 Edge
                 (getBagIndex bag1)
-                (getBagIndex bag2)
+                (getSmallerBagIndex bag2)
                 (Just "")
 
         edges =
             rules
-                |> List.map (\(Rule bag smallerBags) -> smallerBags |> List.map (\smallerBag -> makeEdge bag smallerBag))
+                |> List.map
+                    (\(Rule bag smallerBags) ->
+                        smallerBags
+                            |> List.map (\smallerBag -> makeEdge bag smallerBag)
+                    )
                 |> List.concat
                 |> Maybe.Extra.values
-                |> Debug.log "edges"
-
-        bagToString (Bag adjective color) =
-            adjective ++ " " ++ color
 
         graph =
             Graph.fromNodesAndEdges nodes edges
-
-        _ =
-            Debug.log "graph" (toString (\bag -> Just (bagToString bag)) (\_ -> Just "") graph)
     in
-    0
+    guidedDfs
+        alongIncomingEdges
+        (onDiscovery (\ctx list -> ctx.node.label :: list))
+        [ getBagIndex (Bag "shiny" "gold") |> Maybe.withDefault 0 ]
+        []
+        graph
+        |> Tuple.first
+        |> List.length
+        |> (\n -> n - 1)
 
 
 solvePart2 data_ =
-    0
+    let
+        rules : List Rule
+        rules =
+            data_
+                |> List.map (\str -> String.trim str |> Parser.run ruleParser)
+                |> List.filterMap Result.toMaybe
+
+        bags =
+            List.map bagsFromRule rules
+                |> List.concat
+                |> List.Extra.uniqueBy (\(Bag adjective color) -> adjective ++ color)
+
+        nodes =
+            List.indexedMap (\i bag -> Node i bag) bags
+
+        getBagIndex needle =
+            List.Extra.elemIndex needle bags
+
+        getSmallerBagIndex (SmallerBag _ adjc color) =
+            getBagIndex (Bag adjc color)
+
+        getSmallerBagNumber (SmallerBag num _ _) =
+            num
+
+        makeEdge bag1 bag2 =
+            Maybe.map3
+                Edge
+                (getBagIndex bag1)
+                (getSmallerBagIndex bag2)
+                (Just (bag2 |> getSmallerBagNumber |> String.fromInt))
+
+        edges =
+            rules
+                |> List.map
+                    (\(Rule bag smallerBags) ->
+                        smallerBags
+                            |> List.map (\smallerBag -> makeEdge bag smallerBag)
+                    )
+                |> List.concat
+                |> Maybe.Extra.values
+
+        graph =
+            Graph.fromNodesAndEdges nodes edges
+    in
+    guidedDfs
+        alongIncomingEdges
+        (onDiscovery (\ctx list -> ctx.node.label :: list))
+        [ getBagIndex (Bag "shiny" "gold") |> Maybe.withDefault 0 ]
+        []
+        graph
+        |> Debug.log "part2"
+        |> Tuple.first
+        |> List.length
+        |> (\n -> n - 1)
 
 
 testData =
