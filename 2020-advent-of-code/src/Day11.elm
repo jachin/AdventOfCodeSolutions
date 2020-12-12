@@ -12,7 +12,12 @@ import Task
 
 
 main =
-    Browser.element { init = init, subscriptions = subscriptions, view = view, update = update }
+    Browser.element
+        { init = init
+        , subscriptions = subscriptions
+        , view = view
+        , update = update
+        }
 
 
 subscriptions _ =
@@ -67,7 +72,7 @@ update msg model =
                 nextFloorState =
                     part1MakeNextFloorState model.part1Test
             in
-            if isEqual nextFloorState model.part1Test then
+            if nextFloorState == model.part1Test then
                 ( { model
                     | part1Test = nextFloorState
                     , part1TestAnswer = nextFloorState |> numberOfOccupiedSeats
@@ -106,7 +111,7 @@ update msg model =
                 nextFloorState =
                     part1MakeNextFloorState model.part1
             in
-            if isEqual nextFloorState model.part1 then
+            if nextFloorState == model.part1 then
                 ( { model
                     | part1 = nextFloorState
                     , part1Answer = nextFloorState |> numberOfOccupiedSeats
@@ -189,19 +194,6 @@ part1MakeNextFloorState previous =
         |> Dict.map (\cords space -> getNeighbors cords previous |> part1GetNewSpaceValue space)
 
 
-part1Solver : Dict ( Int, Int ) Space -> Dict ( Int, Int ) Space
-part1Solver floorState =
-    let
-        nextFloorState =
-            part1MakeNextFloorState floorState
-    in
-    if nextFloorState == floorState then
-        floorState
-
-    else
-        part1Solver nextFloorState
-
-
 part2GetNewSpaceValue : Space -> List Space -> Space
 part2GetNewSpaceValue space neighbors =
     case space of
@@ -227,20 +219,6 @@ part2MakeNextFloorState : Dict ( Int, Int ) Space -> Dict ( Int, Int ) Space
 part2MakeNextFloorState previous =
     previous
         |> Dict.map (\cords space -> getVisibleNeighbors cords previous |> part2GetNewSpaceValue space)
-
-
-part2Solver : Dict ( Int, Int ) Space -> Dict ( Int, Int ) Space
-part2Solver floorState =
-    let
-        nextFloorState =
-            part2MakeNextFloorState floorState
-                |> Debug.log "nextFloorState"
-    in
-    if nextFloorState == floorState then
-        floorState
-
-    else
-        part2Solver nextFloorState
 
 
 isEqual : Dict ( Int, Int ) Space -> Dict ( Int, Int ) Space -> Bool
