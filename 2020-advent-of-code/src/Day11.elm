@@ -36,6 +36,7 @@ type alias Model =
     , part2Answer : Int
     , part2Test : Dict ( Int, Int ) Space
     , part2TestAnswer : Int
+    , part2TestIterations : Int
     }
 
 
@@ -49,6 +50,7 @@ init _ =
       , part2Answer = 0
       , part2Test = makeInitialFloorState testData
       , part2TestAnswer = 0
+      , part2TestIterations = 0
       }
     , Cmd.none
     )
@@ -81,14 +83,22 @@ update msg model =
         StartPart2Test ->
             let
                 nextFloorState =
-                    part1MakeNextFloorState model.part2Test
+                    part2MakeNextFloorState model.part2Test
             in
-            if nextFloorState == model.part1Test then
-                ( { model | part1Test = nextFloorState }, Cmd.none )
+            if isEqual nextFloorState model.part2Test then
+                ( { model
+                    | part2Test = nextFloorState
+                    , part2TestAnswer = nextFloorState |> numberOfOccupiedSeats
+                  }
+                , Cmd.none
+                )
 
             else
-                ( { model | part1Test = nextFloorState }
-                , Process.sleep 2.0 |> Task.perform (\_ -> StartPart1)
+                ( { model
+                    | part2Test = nextFloorState
+                    , part2TestIterations = model.part2TestIterations + 1
+                  }
+                , Process.sleep 2.0 |> Task.perform (\_ -> StartPart2Test)
                 )
 
         StartPart1 ->
@@ -124,7 +134,10 @@ view model =
         , p [] [ text ("Answer: " ++ String.fromInt model.part1Answer) ]
         , h2 [] [ text "Part 2" ]
         , p [] [ button [ onClick StartPart2Test ] [ text "Start Part 2 Test" ] ]
+        , p [] [ text ("Iterations: " ++ String.fromInt model.part2TestIterations) ]
+        , p [] [ text ("Answer: " ++ String.fromInt model.part2TestAnswer) ]
         , p [] [ button [ onClick StartPart2 ] [ text "Start Part 2" ] ]
+        , p [] [ text ("Answer: " ++ String.fromInt model.part2Answer) ]
         ]
 
 
@@ -187,6 +200,47 @@ part1Solver floorState =
 
     else
         part1Solver nextFloorState
+
+
+part2GetNewSpaceValue : Space -> List Space -> Space
+part2GetNewSpaceValue space neighbors =
+    case space of
+        EmptySeat ->
+            if noOccupiedSeats neighbors then
+                FullSeat
+
+            else
+                EmptySeat
+
+        FullSeat ->
+            if fiveOrMoreOccupiedSeats neighbors then
+                EmptySeat
+
+            else
+                FullSeat
+
+        Floor ->
+            Floor
+
+
+part2MakeNextFloorState : Dict ( Int, Int ) Space -> Dict ( Int, Int ) Space
+part2MakeNextFloorState previous =
+    previous
+        |> Dict.map (\cords space -> getVisibleNeighbors cords previous |> part2GetNewSpaceValue space)
+
+
+part2Solver : Dict ( Int, Int ) Space -> Dict ( Int, Int ) Space
+part2Solver floorState =
+    let
+        nextFloorState =
+            part2MakeNextFloorState floorState
+                |> Debug.log "nextFloorState"
+    in
+    if nextFloorState == floorState then
+        floorState
+
+    else
+        part2Solver nextFloorState
 
 
 isEqual : Dict ( Int, Int ) Space -> Dict ( Int, Int ) Space -> Bool
