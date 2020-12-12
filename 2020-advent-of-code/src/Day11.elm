@@ -2,55 +2,220 @@ module Day11 exposing (..)
 
 import Browser
 import Dict exposing (Dict)
-import Graph exposing (..)
-import Html exposing (div, h1, h2, p, text)
-import List.Extra
+import Html exposing (button, div, h1, h2, p, text)
+import Html.Events exposing (onClick)
 import Maybe.Extra
 import Parser exposing ((|.), (|=), Parser)
+import Process
+import Set
+import Task
 
 
 main =
-    Browser.sandbox { init = init, update = update, view = view }
+    Browser.element { init = init, subscriptions = subscriptions, view = view, update = update }
+
+
+subscriptions _ =
+    Sub.none
 
 
 type Msg
     = NoOp
+    | StartPart1Test
+    | StartPart2Test
+    | StartPart1
+    | StartPart2
 
 
 type alias Model =
-    { part1 : Int
-    , part1Test : Int
-    , part2 : Int
-    , part2Test : Int
+    { part1 : Dict ( Int, Int ) Space
+    , part1Answer : Int
+    , part1Test : Dict ( Int, Int ) Space
+    , part1TestAnswer : Int
+    , part2 : Dict ( Int, Int ) Space
+    , part2Answer : Int
+    , part2Test : Dict ( Int, Int ) Space
+    , part2TestAnswer : Int
     }
 
 
-init : Model
-init =
-    { part1Test = solvePart1 testData
-    , part1 = solvePart1 data
-    , part2Test = solvePart2 testData
-    , part2 = solvePart2 data
-    }
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( { part1 = makeInitialFloorState data
+      , part1Answer = 0
+      , part1Test = makeInitialFloorState testData
+      , part1TestAnswer = 0
+      , part2 = makeInitialFloorState data
+      , part2Answer = 0
+      , part2Test = makeInitialFloorState testData
+      , part2TestAnswer = 0
+      }
+    , Cmd.none
+    )
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NoOp ->
-            model
+            ( model, Cmd.none )
+
+        StartPart1Test ->
+            let
+                nextFloorState =
+                    part1MakeNextFloorState model.part1Test
+            in
+            if isEqual nextFloorState model.part1Test then
+                ( { model
+                    | part1Test = nextFloorState
+                    , part1TestAnswer = nextFloorState |> numberOfOccupiedSeats
+                  }
+                , Cmd.none
+                )
+
+            else
+                ( { model | part1Test = nextFloorState }
+                , Process.sleep 2.0 |> Task.perform (\_ -> StartPart1Test)
+                )
+
+        StartPart2Test ->
+            let
+                nextFloorState =
+                    part1MakeNextFloorState model.part2Test
+            in
+            if nextFloorState == model.part1Test then
+                ( { model | part1Test = nextFloorState }, Cmd.none )
+
+            else
+                ( { model | part1Test = nextFloorState }
+                , Process.sleep 2.0 |> Task.perform (\_ -> StartPart1)
+                )
+
+        StartPart1 ->
+            let
+                nextFloorState =
+                    part1MakeNextFloorState model.part1
+            in
+            if isEqual nextFloorState model.part1 then
+                ( { model
+                    | part1 = nextFloorState
+                    , part1Answer = nextFloorState |> numberOfOccupiedSeats
+                  }
+                , Cmd.none
+                )
+
+            else
+                ( { model | part1 = nextFloorState }
+                , Process.sleep 2.0 |> Task.perform (\_ -> StartPart1)
+                )
+
+        StartPart2 ->
+            ( model, Cmd.none )
 
 
+view : Model -> Html.Html Msg
 view model =
     div []
         [ h1 [] [ text "Day 11" ]
         , h2 [] [ text "Part 1" ]
-        , p [] [ text (String.fromInt model.part1Test) ]
-        , p [] [ text (String.fromInt model.part1) ]
+        , p [] [ button [ onClick StartPart1Test ] [ text "Start Part 1 Test" ] ]
+        , p [] [ text ("Answer: " ++ String.fromInt model.part1TestAnswer) ]
+        , p [] [ button [ onClick StartPart1 ] [ text "Start Part 1" ] ]
+        , p [] [ text ("Answer: " ++ String.fromInt model.part1Answer) ]
         , h2 [] [ text "Part 2" ]
-        , p [] [ text (String.fromInt model.part2Test) ]
-        , p [] [ text (String.fromInt model.part2) ]
+        , p [] [ button [ onClick StartPart2Test ] [ text "Start Part 2 Test" ] ]
+        , p [] [ button [ onClick StartPart2 ] [ text "Start Part 2" ] ]
         ]
+
+
+makeInitialFloorState : String -> Dict ( Int, Int ) Space
+makeInitialFloorState string =
+    string
+        |> String.trim
+        |> String.split "\n"
+        |> List.map String.toList
+        |> List.map (\row -> List.map String.fromChar row)
+        |> List.indexedMap
+            (\x row ->
+                List.indexedMap
+                    (\y space ->
+                        Parser.run spaceParser space
+                            |> Result.withDefault Floor
+                            |> FloorSquare x y
+                    )
+                    row
+            )
+        |> List.concat
+        |> makeFloorDict
+
+
+part1GetNewSpaceValue : Space -> List Space -> Space
+part1GetNewSpaceValue space neighbors =
+    case space of
+        EmptySeat ->
+            if noOccupiedSeats neighbors then
+                FullSeat
+
+            else
+                EmptySeat
+
+        FullSeat ->
+            if fourOrMoreOccupiedSeats neighbors then
+                EmptySeat
+
+            else
+                FullSeat
+
+        Floor ->
+            Floor
+
+
+part1MakeNextFloorState : Dict ( Int, Int ) Space -> Dict ( Int, Int ) Space
+part1MakeNextFloorState previous =
+    previous
+        |> Dict.map (\cords space -> getNeighbors cords previous |> part1GetNewSpaceValue space)
+
+
+part1Solver : Dict ( Int, Int ) Space -> Dict ( Int, Int ) Space
+part1Solver floorState =
+    let
+        nextFloorState =
+            part1MakeNextFloorState floorState
+    in
+    if nextFloorState == floorState then
+        floorState
+
+    else
+        part1Solver nextFloorState
+
+
+isEqual : Dict ( Int, Int ) Space -> Dict ( Int, Int ) Space -> Bool
+isEqual a b =
+    let
+        aSet =
+            Dict.toList a
+                |> List.map (\( ( x, y ), space ) -> String.fromInt x ++ String.fromInt y ++ spaceToString space)
+                |> Set.fromList
+
+        bSet =
+            Dict.toList b
+                |> List.map (\( ( x, y ), space ) -> String.fromInt x ++ String.fromInt y ++ spaceToString space)
+                |> Set.fromList
+    in
+    Set.diff aSet bSet |> Set.isEmpty
+
+
+spaceToString : Space -> String
+spaceToString space =
+    case space of
+        EmptySeat ->
+            "L"
+
+        FullSeat ->
+            "#"
+
+        Floor ->
+            "."
 
 
 solvePart1 data_ =
@@ -170,6 +335,7 @@ solvePart2 data_ =
             let
                 nextFloorState =
                     makeNextFloorState floorState
+                        |> Debug.log "nextFloorState"
             in
             if nextFloorState == floorState then
                 floorState
@@ -467,6 +633,10 @@ floorParser =
         |. Parser.symbol "."
 
 
+
+--noinspection SpellCheckingInspection
+
+
 testData =
     """
 L.LL.LL.LL
@@ -480,6 +650,10 @@ LLLLLLLLLL
 L.LLLLLL.L
 L.LLLLL.LL
 """
+
+
+
+--noinspection SpellCheckingInspection
 
 
 data =
