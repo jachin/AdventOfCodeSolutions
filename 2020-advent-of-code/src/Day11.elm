@@ -111,7 +111,7 @@ update msg model =
                     | part2Test = nextFloorState
                     , part2TestIterations = model.part2TestIterations + 1
                   }
-                , Process.sleep 2.0 |> Task.perform (\_ -> StartPart2Test)
+                , Process.sleep 10000.0 |> Task.perform (\_ -> StartPart2Test)
                 )
 
         StartPart1 ->
@@ -151,6 +151,7 @@ view model =
         , p [] [ button [ onClick StartPart2Test ] [ text "Start Part 2 Test" ] ]
         , p [] [ text ("Iterations: " ++ String.fromInt model.part2TestIterations) ]
         , p [] [ text ("Answer: " ++ String.fromInt model.part2TestAnswer) ]
+        , floorMarkup model.part2TestSize model.part2Test
         , p [] [ button [ onClick StartPart2 ] [ text "Start Part 2" ] ]
         , p [] [ text ("Answer: " ++ String.fromInt model.part2Answer) ]
         ]
@@ -238,7 +239,10 @@ part1GetNewSpaceValue space neighbors =
 part1MakeNextFloorState : Dict ( Int, Int ) Space -> Dict ( Int, Int ) Space
 part1MakeNextFloorState previous =
     previous
-        |> Dict.map (\cords space -> getNeighbors cords previous |> part1GetNewSpaceValue space)
+        |> Dict.map
+            (\cords space ->
+                getNeighbors cords previous |> part1GetNewSpaceValue space
+            )
 
 
 part2GetNewSpaceValue : Space -> List Space -> Space
@@ -265,7 +269,11 @@ part2GetNewSpaceValue space neighbors =
 part2MakeNextFloorState : Dict ( Int, Int ) Space -> Dict ( Int, Int ) Space
 part2MakeNextFloorState previous =
     previous
-        |> Dict.map (\cords space -> getVisibleNeighbors cords previous |> part2GetNewSpaceValue space)
+        |> Dict.map
+            (\cords space ->
+                getVisibleNeighbors cords previous
+                    |> part2GetNewSpaceValue space
+            )
 
 
 isEqual : Dict ( Int, Int ) Space -> Dict ( Int, Int ) Space -> Bool
@@ -273,12 +281,18 @@ isEqual a b =
     let
         aSet =
             Dict.toList a
-                |> List.map (\( ( x, y ), space ) -> String.fromInt x ++ String.fromInt y ++ spaceToString space)
+                |> List.map
+                    (\( ( x, y ), space ) ->
+                        String.fromInt x ++ String.fromInt y ++ spaceToString space
+                    )
                 |> Set.fromList
 
         bSet =
             Dict.toList b
-                |> List.map (\( ( x, y ), space ) -> String.fromInt x ++ String.fromInt y ++ spaceToString space)
+                |> List.map
+                    (\( ( x, y ), space ) ->
+                        String.fromInt x ++ String.fromInt y ++ spaceToString space
+                    )
                 |> Set.fromList
     in
     Set.diff aSet bSet |> Set.isEmpty
@@ -463,91 +477,6 @@ getVisibleNeighbors ( x, y ) dict =
     let
         upToTheLeft : Int -> Int -> Space
         upToTheLeft x_ y_ =
-            case Dict.get ( x_ + 1, y_ + 1 ) dict of
-                Just space ->
-                    case space of
-                        EmptySeat ->
-                            EmptySeat
-
-                        FullSeat ->
-                            FullSeat
-
-                        Floor ->
-                            upToTheLeft (x_ + 1) (y_ + 1)
-
-                Nothing ->
-                    Floor
-
-        up : Int -> Int -> Space
-        up x_ y_ =
-            case Dict.get ( x_, y_ + 1 ) dict of
-                Just space ->
-                    case space of
-                        EmptySeat ->
-                            EmptySeat
-
-                        FullSeat ->
-                            FullSeat
-
-                        Floor ->
-                            upToTheLeft x_ (y_ + 1)
-
-                Nothing ->
-                    Floor
-
-        upToTheRight : Int -> Int -> Space
-        upToTheRight x_ y_ =
-            case Dict.get ( x_ - 1, y_ + 1 ) dict of
-                Just space ->
-                    case space of
-                        EmptySeat ->
-                            EmptySeat
-
-                        FullSeat ->
-                            FullSeat
-
-                        Floor ->
-                            upToTheLeft (x_ - 1) (y_ + 1)
-
-                Nothing ->
-                    Floor
-
-        left : Int -> Int -> Space
-        left x_ y_ =
-            case Dict.get ( x_ + 1, y_ ) dict of
-                Just space ->
-                    case space of
-                        EmptySeat ->
-                            EmptySeat
-
-                        FullSeat ->
-                            FullSeat
-
-                        Floor ->
-                            upToTheLeft (x_ + 1) y_
-
-                Nothing ->
-                    Floor
-
-        right : Int -> Int -> Space
-        right x_ y_ =
-            case Dict.get ( x_ - 1, y_ ) dict of
-                Just space ->
-                    case space of
-                        EmptySeat ->
-                            EmptySeat
-
-                        FullSeat ->
-                            FullSeat
-
-                        Floor ->
-                            upToTheLeft (x_ - 1) y_
-
-                Nothing ->
-                    Floor
-
-        downToTheLeft : Int -> Int -> Space
-        downToTheLeft x_ y_ =
             case Dict.get ( x_ - 1, y_ - 1 ) dict of
                 Just space ->
                     case space of
@@ -563,8 +492,8 @@ getVisibleNeighbors ( x, y ) dict =
                 Nothing ->
                     Floor
 
-        down : Int -> Int -> Space
-        down x_ y_ =
+        up : Int -> Int -> Space
+        up x_ y_ =
             case Dict.get ( x_, y_ - 1 ) dict of
                 Just space ->
                     case space of
@@ -580,9 +509,9 @@ getVisibleNeighbors ( x, y ) dict =
                 Nothing ->
                     Floor
 
-        downToTheRight : Int -> Int -> Space
-        downToTheRight x_ y_ =
-            case Dict.get ( x_ - 1, y_ - 1 ) dict of
+        upToTheRight : Int -> Int -> Space
+        upToTheRight x_ y_ =
+            case Dict.get ( x_ + 1, y_ - 1 ) dict of
                 Just space ->
                     case space of
                         EmptySeat ->
@@ -592,7 +521,92 @@ getVisibleNeighbors ( x, y ) dict =
                             FullSeat
 
                         Floor ->
-                            upToTheLeft (x_ - 1) (y_ - 1)
+                            upToTheLeft (x_ + 1) (y_ - 1)
+
+                Nothing ->
+                    Floor
+
+        left : Int -> Int -> Space
+        left x_ y_ =
+            case Dict.get ( x_ - 1, y_ ) dict of
+                Just space ->
+                    case space of
+                        EmptySeat ->
+                            EmptySeat
+
+                        FullSeat ->
+                            FullSeat
+
+                        Floor ->
+                            upToTheLeft (x_ - 1) y_
+
+                Nothing ->
+                    Floor
+
+        right : Int -> Int -> Space
+        right x_ y_ =
+            case Dict.get ( x_ + 1, y_ ) dict of
+                Just space ->
+                    case space of
+                        EmptySeat ->
+                            EmptySeat
+
+                        FullSeat ->
+                            FullSeat
+
+                        Floor ->
+                            upToTheLeft (x_ + 1) y_
+
+                Nothing ->
+                    Floor
+
+        downToTheLeft : Int -> Int -> Space
+        downToTheLeft x_ y_ =
+            case Dict.get ( x_ - 1, y_ + 1 ) dict of
+                Just space ->
+                    case space of
+                        EmptySeat ->
+                            EmptySeat
+
+                        FullSeat ->
+                            FullSeat
+
+                        Floor ->
+                            upToTheLeft (x_ - 1) (y_ + 1)
+
+                Nothing ->
+                    Floor
+
+        down : Int -> Int -> Space
+        down x_ y_ =
+            case Dict.get ( x_, y_ + 1 ) dict of
+                Just space ->
+                    case space of
+                        EmptySeat ->
+                            EmptySeat
+
+                        FullSeat ->
+                            FullSeat
+
+                        Floor ->
+                            upToTheLeft x_ (y_ + 1)
+
+                Nothing ->
+                    Floor
+
+        downToTheRight : Int -> Int -> Space
+        downToTheRight x_ y_ =
+            case Dict.get ( x_ + 1, y_ + 1 ) dict of
+                Just space ->
+                    case space of
+                        EmptySeat ->
+                            EmptySeat
+
+                        FullSeat ->
+                            FullSeat
+
+                        Floor ->
+                            upToTheLeft (x_ + 1) (y_ + 1)
 
                 Nothing ->
                     Floor
@@ -661,7 +675,7 @@ fiveOrMoreOccupiedSeats spaces =
         )
         spaces
         |> List.length
-        |> (\length -> length >= 4)
+        |> (\length -> length >= 5)
 
 
 makeFloorDict : List FloorSpace -> Dict ( Int, Int ) Space
