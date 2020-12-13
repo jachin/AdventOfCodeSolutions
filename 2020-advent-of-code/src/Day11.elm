@@ -2,7 +2,7 @@ module Day11 exposing (..)
 
 import Browser
 import Dict exposing (Dict)
-import Html exposing (button, div, h1, h2, p, text)
+import Html exposing (button, div, h1, h2, p, pre, table, td, text, tr)
 import Html.Events exposing (onClick)
 import Maybe.Extra
 import Parser exposing ((|.), (|=), Parser)
@@ -143,7 +143,9 @@ view model =
         , h2 [] [ text "Part 1" ]
         , p [] [ button [ onClick StartPart1Test ] [ text "Start Part 1 Test" ] ]
         , p [] [ text ("Answer: " ++ String.fromInt model.part1TestAnswer) ]
+        , floorMarkup model.part1TestSize model.part1Test
         , p [] [ button [ onClick StartPart1 ] [ text "Start Part 1" ] ]
+        , floorMarkup model.part1Size model.part1
         , p [] [ text ("Answer: " ++ String.fromInt model.part1Answer) ]
         , h2 [] [ text "Part 2" ]
         , p [] [ button [ onClick StartPart2Test ] [ text "Start Part 2 Test" ] ]
@@ -152,6 +154,31 @@ view model =
         , p [] [ button [ onClick StartPart2 ] [ text "Start Part 2" ] ]
         , p [] [ text ("Answer: " ++ String.fromInt model.part2Answer) ]
         ]
+
+
+floorMarkup : ( Int, Int ) -> Dict ( Int, Int ) Space -> Html.Html Msg
+floorMarkup ( x, y ) floor =
+    table []
+        (List.range 0 (x - 1)
+            |> List.map
+                (\x_ ->
+                    tr []
+                        (List.range 0 (y - 1)
+                            |> List.map
+                                (\y_ ->
+                                    td []
+                                        [ pre []
+                                            [ text
+                                                (Dict.get ( x_, y_ ) floor
+                                                    |> Maybe.map spaceToString
+                                                    |> Maybe.withDefault "."
+                                                )
+                                            ]
+                                        ]
+                                )
+                        )
+                )
+        )
 
 
 makeInitialFloorState : String -> Dict ( Int, Int ) Space
