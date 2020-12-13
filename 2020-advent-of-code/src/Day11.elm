@@ -34,12 +34,16 @@ type Msg
 
 type alias Model =
     { part1 : Dict ( Int, Int ) Space
+    , part1Size : ( Int, Int )
     , part1Answer : Int
     , part1Test : Dict ( Int, Int ) Space
+    , part1TestSize : ( Int, Int )
     , part1TestAnswer : Int
     , part2 : Dict ( Int, Int ) Space
+    , part2Size : ( Int, Int )
     , part2Answer : Int
     , part2Test : Dict ( Int, Int ) Space
+    , part2TestSize : ( Int, Int )
     , part2TestAnswer : Int
     , part2TestIterations : Int
     }
@@ -48,12 +52,16 @@ type alias Model =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { part1 = makeInitialFloorState data
+      , part1Size = calculateFloorSize data
       , part1Answer = 0
+      , part1TestSize = calculateFloorSize testData
       , part1Test = makeInitialFloorState testData
       , part1TestAnswer = 0
       , part2 = makeInitialFloorState data
       , part2Answer = 0
+      , part2Size = calculateFloorSize data
       , part2Test = makeInitialFloorState testData
+      , part2TestSize = calculateFloorSize testData
       , part2TestAnswer = 0
       , part2TestIterations = 0
       }
@@ -165,6 +173,18 @@ makeInitialFloorState string =
             )
         |> List.concat
         |> makeFloorDict
+
+
+calculateFloorSize : String -> ( Int, Int )
+calculateFloorSize string =
+    string
+        |> String.trim
+        |> String.split "\n"
+        |> (\strings ->
+                ( List.length strings
+                , List.head strings |> Maybe.map String.length |> Maybe.withDefault 0
+                )
+           )
 
 
 part1GetNewSpaceValue : Space -> List Space -> Space
