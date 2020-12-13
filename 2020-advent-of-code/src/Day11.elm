@@ -42,6 +42,7 @@ type alias Model =
     , part2 : Dict ( Int, Int ) Space
     , part2Size : ( Int, Int )
     , part2Answer : Int
+    , part2Iterations : Int
     , part2Test : Dict ( Int, Int ) Space
     , part2TestSize : ( Int, Int )
     , part2TestAnswer : Int
@@ -59,6 +60,7 @@ init _ =
       , part1TestAnswer = 0
       , part2 = makeInitialFloorState data
       , part2Answer = 0
+      , part2Iterations = 0
       , part2Size = calculateFloorSize data
       , part2Test = makeInitialFloorState testData
       , part2TestSize = calculateFloorSize testData
@@ -111,7 +113,7 @@ update msg model =
                     | part2Test = nextFloorState
                     , part2TestIterations = model.part2TestIterations + 1
                   }
-                , Process.sleep 10000.0 |> Task.perform (\_ -> StartPart2Test)
+                , Process.sleep 10.0 |> Task.perform (\_ -> StartPart2Test)
                 )
 
         StartPart1 ->
@@ -133,7 +135,25 @@ update msg model =
                 )
 
         StartPart2 ->
-            ( model, Cmd.none )
+            let
+                nextFloorState =
+                    part2MakeNextFloorState model.part2
+            in
+            if isEqual nextFloorState model.part2 then
+                ( { model
+                    | part2 = nextFloorState
+                    , part2Answer = nextFloorState |> numberOfOccupiedSeats
+                  }
+                , Cmd.none
+                )
+
+            else
+                ( { model
+                    | part2 = nextFloorState
+                    , part2Iterations = model.part2Iterations + 1
+                  }
+                , Process.sleep 10.0 |> Task.perform (\_ -> StartPart2)
+                )
 
 
 view : Model -> Html.Html Msg
@@ -154,6 +174,7 @@ view model =
         , floorMarkup model.part2TestSize model.part2Test
         , p [] [ button [ onClick StartPart2 ] [ text "Start Part 2" ] ]
         , p [] [ text ("Answer: " ++ String.fromInt model.part2Answer) ]
+        , floorMarkup model.part2Size model.part2
         ]
 
 
@@ -504,7 +525,7 @@ getVisibleNeighbors ( x, y ) dict =
                             FullSeat
 
                         Floor ->
-                            upToTheLeft x_ (y_ - 1)
+                            up x_ (y_ - 1)
 
                 Nothing ->
                     Floor
@@ -521,7 +542,7 @@ getVisibleNeighbors ( x, y ) dict =
                             FullSeat
 
                         Floor ->
-                            upToTheLeft (x_ + 1) (y_ - 1)
+                            upToTheRight (x_ + 1) (y_ - 1)
 
                 Nothing ->
                     Floor
@@ -538,7 +559,7 @@ getVisibleNeighbors ( x, y ) dict =
                             FullSeat
 
                         Floor ->
-                            upToTheLeft (x_ - 1) y_
+                            left (x_ - 1) y_
 
                 Nothing ->
                     Floor
@@ -555,7 +576,7 @@ getVisibleNeighbors ( x, y ) dict =
                             FullSeat
 
                         Floor ->
-                            upToTheLeft (x_ + 1) y_
+                            right (x_ + 1) y_
 
                 Nothing ->
                     Floor
@@ -572,7 +593,7 @@ getVisibleNeighbors ( x, y ) dict =
                             FullSeat
 
                         Floor ->
-                            upToTheLeft (x_ - 1) (y_ + 1)
+                            downToTheLeft (x_ - 1) (y_ + 1)
 
                 Nothing ->
                     Floor
@@ -589,7 +610,7 @@ getVisibleNeighbors ( x, y ) dict =
                             FullSeat
 
                         Floor ->
-                            upToTheLeft x_ (y_ + 1)
+                            down x_ (y_ + 1)
 
                 Nothing ->
                     Floor
@@ -606,7 +627,7 @@ getVisibleNeighbors ( x, y ) dict =
                             FullSeat
 
                         Floor ->
-                            upToTheLeft (x_ + 1) (y_ + 1)
+                            downToTheRight (x_ + 1) (y_ + 1)
 
                 Nothing ->
                     Floor
