@@ -5,6 +5,8 @@ import Html exposing (button, div, h1, h2, p, text)
 import Html.Events exposing (onClick)
 import List.Extra
 import Maybe.Extra
+import Process
+import Task
 
 
 main =
@@ -34,6 +36,9 @@ type alias Model =
     , part1TestAnswer : Int
     , part1TestStartTime : Int
     , part1TestBusTimes : List Int
+    , part2BusIds : List (Maybe Int)
+    , part2TestBusIds : List (Maybe Int)
+    , part2TestTimestamp : Int
     , part2Answer : Int
     , part2TestAnswer : Int
     }
@@ -51,6 +56,16 @@ init _ =
             data
                 |> String.trim
                 |> String.split "\n"
+
+        _ =
+            Debug.log "test check timestamp" <|
+                checkTimeStamp 1068781
+                    (testInputs
+                        |> List.tail
+                        |> Maybe.andThen List.head
+                        |> Maybe.withDefault ""
+                        |> parseAllBusIds
+                    )
     in
     ( { part1Answer = 0
       , part1StartTime =
@@ -63,7 +78,7 @@ init _ =
                 |> List.tail
                 |> Maybe.andThen List.head
                 |> Maybe.withDefault ""
-                |> parseSchedule
+                |> parseActiveBusIds
       , part1TestAnswer = 0
       , part1TestStartTime =
             testInputs
@@ -75,7 +90,20 @@ init _ =
                 |> List.tail
                 |> Maybe.andThen List.head
                 |> Maybe.withDefault ""
-                |> parseSchedule
+                |> parseActiveBusIds
+      , part2BusIds =
+            inputs
+                |> List.tail
+                |> Maybe.andThen List.head
+                |> Maybe.withDefault ""
+                |> parseAllBusIds
+      , part2TestBusIds =
+            testInputs
+                |> List.tail
+                |> Maybe.andThen List.head
+                |> Maybe.withDefault ""
+                |> parseAllBusIds
+      , part2TestTimestamp = 0
       , part2Answer = 0
       , part2TestAnswer = 0
       }
@@ -83,13 +111,20 @@ init _ =
     )
 
 
-parseSchedule : String -> List Int
-parseSchedule string =
+parseActiveBusIds : String -> List Int
+parseActiveBusIds string =
     string
         |> String.split ","
         |> List.filter (\str -> str /= "x")
         |> List.map String.toInt
         |> Maybe.Extra.values
+
+
+parseAllBusIds : String -> List (Maybe Int)
+parseAllBusIds string =
+    string
+        |> String.split ","
+        |> List.map String.toInt
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -107,7 +142,19 @@ update msg model =
             )
 
         StartPart2Test ->
-            ( model, Cmd.none )
+            if checkTimeStamp model.part2TestTimestamp model.part2TestBusIds then
+                ( { model | part2TestAnswer = model.part2TestTimestamp }, Cmd.none )
+
+            else
+                let
+                    increment =
+                        List.head model.part2TestBusIds
+                            |> Maybe.andThen identity
+                            |> Maybe.withDefault 0
+                in
+                ( { model | part2TestTimestamp = model.part2TestTimestamp + increment }
+                , Process.sleep 0.0 |> Task.perform (\_ -> StartPart2Test)
+                )
 
         SolvePart1 ->
             ( { model
@@ -159,6 +206,48 @@ busWaitTimes startTime busIds =
         waitTimes
         |> List.sortBy
             (\( _, a ) -> a)
+
+
+checkTimeStamp : Int -> List (Maybe Int) -> Bool
+checkTimeStamp timestamp busIds =
+    let
+        _ =
+            if List.length busIds < 3 then
+                Debug.log "bus ids" ( timestamp, busIds )
+
+            else
+                ( timestamp, busIds )
+    in
+    case List.head busIds of
+        Just maybeBusId ->
+            case maybeBusId of
+                Just busId ->
+                    if modBy busId timestamp == 0 then
+                        case List.tail busIds of
+                            Just tailBusIds ->
+                                checkTimeStamp (timestamp + 1) tailBusIds
+
+                            Nothing ->
+                                True
+
+                    else
+                        False
+
+                Nothing ->
+                    case List.tail busIds of
+                        Just tailBusIds ->
+                            checkTimeStamp (timestamp + 1) tailBusIds
+
+                        Nothing ->
+                            True
+
+        Nothing ->
+            case List.tail busIds of
+                Just tailBusIds ->
+                    checkTimeStamp (timestamp + 1) tailBusIds
+
+                Nothing ->
+                    True
 
 
 testData =
