@@ -14,7 +14,6 @@ func loadBinaryDataFromFile(fileName: String) -> [[Int]] {
         result.append(r)
     }
     return result
-    
 }
 
 func transpose(matrix: [[Int]]) -> [[Int]] {
