@@ -1,6 +1,6 @@
 import Cocoa
 
-struct Segment {
+struct SegmentDisplay {
     var a: Bool = false
     var b: Bool = false
     var c: Bool = false
@@ -10,38 +10,180 @@ struct Segment {
     var g: Bool = false
 }
 
-func segmentToArray(segment: Segment) -> [Bool] {
+struct WireMapping {
+    var top: String? = nil
+    var topLeft : String? = nil
+    var topRight : String? = nil
+    var middle : String? = nil
+    var bottomLeft : String? = nil
+    var bottomRight : String? = nil
+    var bottom: String? = nil
+}
+
+func segmentToArray(segment: SegmentDisplay) -> [Bool] {
     return [segment.a, segment.b, segment.c, segment.d, segment.e, segment.f, segment.g]
 }
 
-func is1digit(segment: Segment) -> Bool {
+
+func segmentToPairs(segment: SegmentDisplay) -> [(String, Bool)] {
+    return [("a", segment.a),("b", segment.b), ("c", segment.c), ("d", segment.d), ("e", segment.e), ("f", segment.f), ("g", segment.g)]
+}
+
+
+func segmentToSet(segment: SegmentDisplay) -> Set<String> {
+    let arr = segmentToPairs(segment: segment).filter { (_, b) in b }.map { (c, _) in c }
+    var set: Set<String> = Set<String>()
+    for a in arr {
+        set.insert(a)
+    }
+    return set
+}
+
+func numberOfLitSegments(segment: SegmentDisplay) -> Int {
+    segmentToArray(segment: segment).filter { $0 }.count
+}
+
+func is1digit(segment: SegmentDisplay) -> Bool {
     (segmentToArray(segment: segment).filter { $0 } ).count == 2
 }
 
-func is4digit(segment: Segment) -> Bool {
+func find1Digit(segments: [SegmentDisplay]) -> SegmentDisplay? {
+    segments.filter { is1digit(segment: $0) }.first
+}
+
+func is4digit(segment: SegmentDisplay) -> Bool {
     (segmentToArray(segment: segment).filter { $0 } ).count == 4
 }
 
-func is7digit(segment: Segment) -> Bool {
+func find4Digit(segments: [SegmentDisplay]) -> SegmentDisplay? {
+    segments.filter { is4digit(segment: $0) }.first
+}
+
+func is7digit(segment: SegmentDisplay) -> Bool {
     (segmentToArray(segment: segment).filter { $0 } ).count == 3
 }
 
-func is8digit(segment: Segment) -> Bool {
+func find7Digit(segments: [SegmentDisplay]) -> SegmentDisplay? {
+    segments.filter { is7digit(segment: $0) }.first
+}
+
+func is8digit(segment: SegmentDisplay) -> Bool {
     (segmentToArray(segment: segment).filter { $0 } ).count == 7
 }
 
-func isEasyDigit(segment: Segment) -> Bool {
+func find8Digit(segments: [SegmentDisplay]) -> SegmentDisplay? {
+    segments.filter { is8digit(segment: $0) }.first
+}
+
+func isEasyDigit(segment: SegmentDisplay) -> Bool {
     return is1digit(segment: segment) || is4digit(segment: segment) || is7digit(segment: segment) || is8digit(segment: segment)
+}
+
+func findTopWire(segments: [SegmentDisplay]) -> String? {
+    let maybeA1Digit: SegmentDisplay? = find1Digit(segments: segments)
+    let maybeA7Digit: SegmentDisplay? = find7Digit(segments: segments)
+    
+    if let a1Digit = maybeA1Digit, let a7Digit = maybeA7Digit {
+        return segmentToSet(segment: a7Digit).subtracting(segmentToSet(segment: a1Digit)).first
+    }
+    return nil
+}
+
+func findTopRightWire(segments: [SegmentDisplay]) -> String? {
+    let maybeA1Digit : SegmentDisplay? = find1Digit(segments: segments)
+    let maybeA8Digit : SegmentDisplay? = find8Digit(segments: segments)
+    
+    for s in segments {
+        if (numberOfLitSegments(segment: s) == 6) {
+            if let a1Digit = maybeA1Digit, let a8Digit = maybeA8Digit {
+                let a1DigitSet = segmentToSet(segment: a1Digit)
+                let a8DigitSet = segmentToSet(segment: a8Digit)
+                let displaySet = segmentToSet(segment: s)
+                
+                let result = a8DigitSet.subtracting(displaySet).union(a1DigitSet)
+                
+                if (result.count == 2) {
+                    return a8DigitSet.subtracting(displaySet).first
+                }
+                
+            }
+        }
+    }
+    return nil
+}
+
+func findBottomRightWire(segments: [SegmentDisplay], topWire: String, topRightWire: String) -> String? {
+    let knownWires: Set<String> = [topWire, topRightWire]
+    let maybe7Digit : SegmentDisplay? = find7Digit(segments: segments)
+    if let a7Digit = maybe7Digit {
+        return segmentToSet(segment: a7Digit).subtracting(knownWires).first
+    }
+    return nil
+}
+
+func findBottomLeftWire(segments: [SegmentDisplay]) -> String? {
+    let maybeA8Digit : SegmentDisplay? = find8Digit(segments: segments)
+    let maybeA4Digit : SegmentDisplay? = find4Digit(segments: segments)
+    
+    for s in segments {
+        if (numberOfLitSegments(segment: s) == 6) {
+            if let a4Digit = maybeA4Digit, let a8Digit = maybeA8Digit {
+                let a4DigitSet = segmentToSet(segment: a4Digit)
+                let a8DigitSet = segmentToSet(segment: a8Digit)
+                let displaySet = segmentToSet(segment: s)
+                
+                let result = a8DigitSet.subtracting(displaySet).subtracting(a4DigitSet)
+                
+                if (result.count == 1) {
+                    return result.first
+                }
+                
+            }
+        }
+    }
+    return nil
+}
+
+func findBottomWire(segments: [SegmentDisplay]) -> String? {
+    var fiveSegmentNumbers: Set<String> = []
+    for s in segments {
+        if (numberOfLitSegments(segment: s) == 5) {
+            if fiveSegmentNumbers.isEmpty {
+                fiveSegmentNumbers = segmentToSet(segment: s)
+            } else {
+                fiveSegmentNumbers.intersection(segmentToSet(segment: s))
+            }
+        }
+    }
+    
+    let maybeA4Digit : SegmentDisplay? = find4Digit(segments: segments)
+    let maybe7Digit : SegmentDisplay? = find7Digit(segments: segments)
+    
+    
+    
+    if let a4Digit = maybeA4Digit, let a7Digit = maybe7Digit {
+        
+        let a4DigitSet = segmentToSet(segment: a4Digit)
+        let a7DigitSet = segmentToSet(segment: a7Digit)
+        
+        let result = fiveSegmentNumbers.subtracting(a4DigitSet).subtracting(a7DigitSet)
+        
+        if (result.count == 1) {
+            return result.first
+        }
+    }
+    
+    return nil
 }
 
 
 struct Entry {
-    var signalPatterns: [Segment] = []
-    var outputValues: [Segment] = []
+    var signalPatterns: [SegmentDisplay] = []
+    var outputValues: [SegmentDisplay] = []
 }
 
-func stringToSegment(str: String) -> Segment {
-    var segment = Segment()
+func stringToSegment(str: String) -> SegmentDisplay {
+    var segment = SegmentDisplay()
     for c in str {
         switch c {
         case "a":
@@ -87,5 +229,19 @@ func part1(entries: [Entry]) -> Int {
     entries.map { $0.outputValues.filter { isEasyDigit(segment: $0) }.count }.reduce(0, +)
 }
 
-part1(entries: loadStateFromFile(fileName: "example"))
-part1(entries: loadStateFromFile(fileName: "puzzle_input"))
+func part2(entries: [Entry]) {
+    for entry in entries {
+        var wireMapping = WireMapping()
+        wireMapping.top = findTopWire(segments: entry.signalPatterns)
+        wireMapping.topRight = findTopRightWire(segments: entry.signalPatterns)
+        wireMapping.bottomRight = findBottomRightWire(segments: entry.signalPatterns, topWire: wireMapping.top!, topRightWire: wireMapping.topRight!)
+        wireMapping.bottomLeft = findBottomLeftWire(segments: entry.signalPatterns)
+        wireMapping.bottom = findBottomWire(segments: entry.signalPatterns)
+        print(wireMapping)
+    }
+}
+
+//part1(entries: loadStateFromFile(fileName: "example"))
+//part1(entries: loadStateFromFile(fileName: "puzzle_input"))
+
+part2(entries: loadStateFromFile(fileName: "example"))
