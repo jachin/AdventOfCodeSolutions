@@ -61,32 +61,32 @@ fn str_to_play(str) {
 
 fn str_to_goal(str) {
   case str {
-    "X" -> option.Some(Lose)
-    "Y" -> option.Some(Draw)
-    "Z" -> option.Some(Win)
-    _ -> option.None
+    "X" -> Ok(Lose)
+    "Y" -> Ok(Draw)
+    "Z" -> Ok(Win)
+    _ -> Error(Nil)
   }
 }
 
-fn calculate_strategy(play, goal) {
-  case play {
+fn calculate_strategy(data: #(Play, Goal)) {
+  case data.0 {
     Rock ->
-      case Goal {
-        Lose -> 3 + 1
+      case data.1 {
+        Lose -> 3 + 0
         Draw -> 1 + 3
         Win -> 2 + 6
       }
 
     Paper ->
-      case Goal {
-        Lose -> 1 + 1
+      case data.1 {
+        Lose -> 1 + 0
         Draw -> 2 + 3
         Win -> 3 + 6
       }
 
     Scissors ->
-      case Goal {
-        Lose -> 2 + 1
+      case data.1 {
+        Lose -> 2 + 0
         Draw -> 3 + 3
         Win -> 1 + 6
       }
@@ -111,6 +111,28 @@ fn parse_data(str) {
   |> option.values
 }
 
+fn str_to_play_2(str) {
+  case str {
+    "A" -> Ok(Rock)
+    "B" -> Ok(Paper)
+    "C" -> Ok(Scissors)
+
+    _ -> Error(Nil)
+  }
+}
+
+fn parse_data_2(str) {
+  string.split(str, on: "\n")
+  |> list.map(fn(line) { string.split(line, on: " ") })
+  |> list.map(fn(chunks) {
+    assert Ok(play_str) = list.first(chunks)
+    assert Ok(goal_str) = list.last(chunks)
+    assert Ok(play) = str_to_play_2(play_str)
+    assert Ok(goal) = str_to_goal(goal_str)
+    #(play, goal)
+  })
+}
+
 pub fn main() {
   io.println("Part 1 test")
 
@@ -125,6 +147,20 @@ pub fn main() {
   assert Ok(part_1_data) = file.read("./data/part_1.txt")
   parse_data(part_1_data)
   |> list.map(calculate_score)
+  |> int.sum
+  |> int.to_string
+  |> io.println
+
+  io.println("Part 2 test")
+  parse_data_2(test_data)
+  |> list.map(calculate_strategy)
+  |> int.sum
+  |> int.to_string
+  |> io.println
+
+  io.println("Part 2")
+  parse_data_2(part_1_data)
+  |> list.map(calculate_strategy)
   |> int.sum
   |> int.to_string
   |> io.println
