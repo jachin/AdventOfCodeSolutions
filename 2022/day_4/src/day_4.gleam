@@ -6,6 +6,14 @@ import gleam/int
 import gleam/iterator
 import gleam/set
 
+type Assignment {
+  Assignment(zones: set.Set(Int))
+}
+
+type AssignmentPair {
+  AssignmentPair(first: Assignment, second: Assignment)
+}
+
 fn parse_data(str) {
   string.split(str, on: "\n")
   |> list.filter(fn(line) { string.length(line) > 0 })
@@ -40,34 +48,65 @@ fn make_sets(data) {
       assert Ok(second_start) = list.at(second, 0)
       assert Ok(second_end) = list.at(second, 1)
 
-      io.debug(first_start)
-      io.debug(first_end)
-      io.debug(second_start)
-      io.debug(second_end)
-
-      #(
-        iterator.range(first_start, first_end)
-        |> iterator.to_list
-        |> set.from_list,
-        iterator.range(second_start, second_end)
-        |> iterator.to_list
-        |> set.from_list,
+      AssignmentPair(
+        Assignment(
+          iterator.range(first_start, first_end)
+          |> iterator.to_list
+          |> set.from_list,
+        ),
+        Assignment(
+          iterator.range(second_start, second_end)
+          |> iterator.to_list
+          |> set.from_list,
+        ),
       )
     },
   )
 }
 
-fn is_redundant(data) {
-  list.map(data, fn(pair) { set.intersection(pair.0, pair.1) })
+fn is_redundant(data: List(AssignmentPair)) {
+  list.map(
+    data,
+    fn(pair) {
+      case
+        set.size(pair.first.zones) < set.union(
+          pair.first.zones,
+          pair.second.zones,
+        )
+        |> set.size,
+        set.size(pair.second.zones) < set.union(
+          pair.first.zones,
+          pair.second.zones,
+        )
+        |> set.size
+      {
+        True, True -> False
+        _, _ -> True
+      }
+    },
+  )
 }
 
 pub fn main() {
   io.println("Hello from day_4!")
-  io.println("Part 1 test")
 
+  io.println("Part 1 test")
   assert Ok(test_data) = file.read("./data/test.txt")
   parse_data(test_data)
   |> make_sets
   |> is_redundant
-  |> io.debug
+  |> list.filter(fn(b) { b })
+  |> list.length
+  |> int.to_string
+  |> io.println
+
+  io.println("Part 1")
+  assert Ok(part_1_data) = file.read("./data/part_1.txt")
+  parse_data(part_1_data)
+  |> make_sets
+  |> is_redundant
+  |> list.filter(fn(b) { b })
+  |> list.length
+  |> int.to_string
+  |> io.println
 }
