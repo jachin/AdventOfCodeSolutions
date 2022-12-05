@@ -87,6 +87,16 @@ fn is_redundant(data: List(AssignmentPair)) {
   )
 }
 
+fn is_overlapping(data: List(AssignmentPair)) {
+  list.map(
+    data,
+    fn(pair) {
+      0 < set.intersection(pair.first.zones, pair.second.zones)
+      |> set.size
+    },
+  )
+}
+
 pub fn main() {
   io.println("Hello from day_4!")
 
@@ -105,6 +115,26 @@ pub fn main() {
   parse_data(part_1_data)
   |> make_sets
   |> is_redundant
+  |> list.filter(fn(b) { b })
+  |> list.length
+  |> int.to_string
+  |> io.println
+
+  io.println("Part 2 test")
+  assert Ok(test_data) = file.read("./data/test.txt")
+  parse_data(test_data)
+  |> make_sets
+  |> is_overlapping
+  |> list.filter(fn(b) { b })
+  |> list.length
+  |> int.to_string
+  |> io.println
+
+  io.println("Part 2")
+  assert Ok(part_1_data) = file.read("./data/part_1.txt")
+  parse_data(part_1_data)
+  |> make_sets
+  |> is_overlapping
   |> list.filter(fn(b) { b })
   |> list.length
   |> int.to_string
