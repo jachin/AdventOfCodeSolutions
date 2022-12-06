@@ -5,6 +5,7 @@ import gleam/pair
 import gleam/list
 import gleam/map
 import gleam/option
+import gleam/regex
 
 fn split_on_blank_line(str) {
   assert Ok(parts) = string.split_once(str, "\n\n")
@@ -58,6 +59,25 @@ fn parse_stack_str(str) {
   )
 }
 
+type Move {
+  Move(number: Int, source: Int, destination: Int)
+}
+
+fn parse_moves_str(str) {
+  assert Ok(re) = regex.from_string("move ([0-9]+) from ([0-9]+) to ([0-9]+)")
+
+  string.split(str, on: "\n")
+  |> list.map(fn(line) {
+    let result = regex.scan(with: re, content: line)
+    assert Ok(match) = list.first(result)
+    io.debug(match.submatches)
+    assert Ok(number) = list.at(match.submatches, 0)
+    io.debug(number)
+    number
+  })
+  |> io.debug
+}
+
 pub fn main() {
   io.println("Hello from day_5!")
 
@@ -67,6 +87,8 @@ pub fn main() {
 
   let stacks = parse_stack_str(stacks_str)
   io.debug(stacks)
+
+  let steps = parse_moves_str(moves_str)
 
   io.println(moves_str)
 }
