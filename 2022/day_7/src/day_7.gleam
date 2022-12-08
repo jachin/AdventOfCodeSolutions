@@ -59,9 +59,9 @@ pub fn handle_line(stack, line: TerminalLine) {
         Up -> list.drop(stack, 1)
         Directory(name) -> list.append(stack, [name])
       }
-    DirList -> []
-    Dir(name) -> []
-    File(name, size) -> []
+    DirList -> stack
+    Dir(name) -> stack
+    File(name, size) -> stack
   }
 }
 
