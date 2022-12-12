@@ -1,5 +1,6 @@
 import gleam/io
 import gleam/int
+import gleam/map
 import gleam/string
 import gleam/list
 import gleam/erlang/file
@@ -15,6 +16,26 @@ pub type Directory {
   Root
   Up
   Directory(name: String)
+}
+
+pub type FileSystem {
+  FileSystem(stack: List(String), files: map.Map(String, Int))
+}
+
+fn new_file_system() {
+  FileSystem([], map.new())
+}
+
+fn go_to_root(file_system: FileSystem) {
+  FileSystem([], files: file_system.files)
+}
+
+fn go_up_dir(file_system: FileSystem) {
+  FileSystem(list.drop(file_system.stack, 1), file_system.files)
+}
+
+fn go_down_dir(file_system: FileSystem, dir_name: String) {
+  FileSystem(list.append(file_system.stack, [dir_name]), file_system.files)
 }
 
 fn parse_file_info(str) {
@@ -50,18 +71,18 @@ fn parse_terminal_lines(str) {
   })
 }
 
-pub fn handle_line(stack, line: TerminalLine) {
-  io.debug(stack)
+pub fn handle_line(file_system: FileSystem, line: TerminalLine) {
+  io.debug(file_system)
   case line {
     Cd(dir) ->
       case dir {
-        Root -> []
-        Up -> list.drop(stack, 1)
-        Directory(name) -> list.append(stack, [name])
+        Root -> go_to_root(file_system)
+        Up -> go_up_dir(file_system)
+        Directory(name) -> go_down_dir(file_system, name)
       }
-    DirList -> stack
-    Dir(name) -> stack
-    File(name, size) -> stack
+    DirList -> file_system
+    Dir(name) -> file_system
+    File(name, size) -> file_system
   }
 }
 
@@ -71,6 +92,6 @@ pub fn main() {
   io.println("Part 1 test")
   assert Ok(test_data) = file.read("./data/test.txt")
   parse_terminal_lines(test_data)
-  |> list.fold(from: [], with: handle_line)
+  |> list.fold(from: new_file_system(), with: handle_line)
   |> io.debug
 }
