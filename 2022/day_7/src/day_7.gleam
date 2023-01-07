@@ -18,8 +18,11 @@ pub type Directory {
   Directory(name: String)
 }
 
+type File =
+  #(String, String)
+
 pub type FileSystem {
-  FileSystem(stack: List(String), files: map.Map(String, Int))
+  FileSystem(stack: List(String), files: map.Map(File, Int))
 }
 
 fn new_file_system() {
@@ -38,8 +41,22 @@ fn go_down_dir(file_system: FileSystem, dir_name: String) {
   FileSystem(list.append(file_system.stack, [dir_name]), file_system.files)
 }
 
+fn add_file(file_system: FileSystem, file_name: String, file_size: Int) {
+  FileSystem(
+    file_system.stack,
+    case list.length(file_system.stack) < 1 {
+      True -> map.insert(file_system.files, #("/", file_name), file_size)
+      False ->
+        map.insert(
+          file_system.files,
+          #(string.join(file_system.stack, "/"), file_name),
+          file_size,
+        )
+    },
+  )
+}
+
 fn parse_file_info(str) {
-  io.println(str)
   assert Ok(#(bytes_str, name)) = string.split_once(str, " ")
   assert Ok(bytes) = int.parse(bytes_str)
   File(name, bytes)
@@ -53,7 +70,6 @@ fn parse_terminal_lines(str) {
     |> string.length > 0
   })
   |> list.map(fn(line) {
-    io.println(line)
     case line {
       "$ " <> cmd ->
         case cmd {
@@ -72,7 +88,6 @@ fn parse_terminal_lines(str) {
 }
 
 pub fn handle_line(file_system: FileSystem, line: TerminalLine) {
-  io.debug(file_system)
   case line {
     Cd(dir) ->
       case dir {
@@ -81,9 +96,18 @@ pub fn handle_line(file_system: FileSystem, line: TerminalLine) {
         Directory(name) -> go_down_dir(file_system, name)
       }
     DirList -> file_system
-    Dir(name) -> file_system
-    File(name, size) -> file_system
+    Dir(_) -> file_system
+    File(name, size) -> add_file(file_system, name, size)
   }
+}
+
+fn calculate_dir_sizes(file_system: FileSystem) {
+  file_system.files
+  |> map.to_list
+  |> list.fold(from: [], with: fn(file, size) {
+      let dir 
+    })
+  |> io.debug
 }
 
 pub fn main() {
@@ -93,5 +117,6 @@ pub fn main() {
   assert Ok(test_data) = file.read("./data/test.txt")
   parse_terminal_lines(test_data)
   |> list.fold(from: new_file_system(), with: handle_line)
+  |> calculate_dir_sizes
   |> io.debug
 }
