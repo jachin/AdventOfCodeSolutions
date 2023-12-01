@@ -113,23 +113,23 @@ numberChomper = \output, inputStr ->
     if Str.isEmpty inputStr then
         output
     else if Str.startsWith inputStr "one" then
-        numberChomper (Str.concat output "1") (Str.graphemes inputStr |> List.dropFirst 3 |> Str.joinWith "" )
+        numberChomper (Str.concat output "1") (Str.graphemes inputStr |> List.dropFirst 1 |> Str.joinWith "" )
     else if Str.startsWith inputStr "two" then
-        numberChomper (Str.concat output "2") (Str.graphemes inputStr |> List.dropFirst 3 |> Str.joinWith "" )
+        numberChomper (Str.concat output "2") (Str.graphemes inputStr |> List.dropFirst 1 |> Str.joinWith "" )
     else if Str.startsWith inputStr "three" then
-        numberChomper (Str.concat output "3") (Str.graphemes inputStr |> List.dropFirst 5 |> Str.joinWith "" )
+        numberChomper (Str.concat output "3") (Str.graphemes inputStr |> List.dropFirst 1 |> Str.joinWith "" )
     else if Str.startsWith inputStr "four" then
-        numberChomper (Str.concat output "4") (Str.graphemes inputStr |> List.dropFirst 4 |> Str.joinWith "" )
+        numberChomper (Str.concat output "4") (Str.graphemes inputStr |> List.dropFirst 1 |> Str.joinWith "" )
     else if Str.startsWith inputStr "five" then
-        numberChomper (Str.concat output "5") (Str.graphemes inputStr |> List.dropFirst 4 |> Str.joinWith "" )
+        numberChomper (Str.concat output "5") (Str.graphemes inputStr |> List.dropFirst 1 |> Str.joinWith "" )
     else if Str.startsWith inputStr "six" then
-        numberChomper (Str.concat output "6") (Str.graphemes inputStr |> List.dropFirst 3 |> Str.joinWith "" )
+        numberChomper (Str.concat output "6") (Str.graphemes inputStr |> List.dropFirst 1 |> Str.joinWith "" )
     else if Str.startsWith inputStr "seven" then
-        numberChomper (Str.concat output "7") (Str.graphemes inputStr |> List.dropFirst 5 |> Str.joinWith "" )
+        numberChomper (Str.concat output "7") (Str.graphemes inputStr |> List.dropFirst 1 |> Str.joinWith "" )
     else if Str.startsWith inputStr "eight" then
-        numberChomper (Str.concat output "8") (Str.graphemes inputStr |> List.dropFirst 5 |> Str.joinWith "" )
+        numberChomper (Str.concat output "8") (Str.graphemes inputStr |> List.dropFirst 1 |> Str.joinWith "" )
     else if Str.startsWith inputStr "nine" then
-        numberChomper (Str.concat output "9") (Str.graphemes inputStr |> List.dropFirst 4 |> Str.joinWith "" )
+        numberChomper (Str.concat output "9") (Str.graphemes inputStr |> List.dropFirst 1 |> Str.joinWith "" )
     else
         when Str.graphemes inputStr |> List.first is
             Err ListWasEmpty ->
