@@ -37,7 +37,7 @@ main =
             schematic = parseInput lines
 
             dbg
-                schematic.symbols
+                schematic
 
             symbols = schematic.symbols |> List.map .cords |> Set.fromList
 
@@ -49,9 +49,6 @@ main =
                         Set.intersection agacentSpaces symbols |> Set.isEmpty
                     )
                 |> List.map .number
-
-            dbg
-                actualPartNumbers
 
             answer = List.sum actualPartNumbers |> Num.toStr
             Stdout.line "answer: \(answer)"
@@ -168,11 +165,11 @@ parseInput = \inputLines ->
                             { schematicX & currentNumber: Str.concat schematicX.currentNumber "9" }
 
                         symbol ->
-                            if Str.isEmpty schematicX.currentNumber then
-                                newSymbol = {
-                                    symbol: symbol,
-                                    cords: { x: Num.toI32 x, y: Num.toI32 y },
-                                }
+                            newSymbol = {
+                                symbol: symbol,
+                                cords: { x: Num.toI32 x, y: Num.toI32 y },
+                            }
+                            if Str.isEmpty schematicX.currentNumber then   
                                 { schematicX &
                                     symbols: List.append schematicX.symbols newSymbol,
                                 }
@@ -186,7 +183,7 @@ parseInput = \inputLines ->
                                     })
                                 { schematicX &
                                     parts: List.appendIfOk schematicX.parts newPart,
-                                    symbols: List.append schematicX.symbols { symbol: symbol, cords: { x: Num.toI32 x, y: Num.toI32 y } },
+                                    symbols: List.append schematicX.symbols newSymbol,
                                     currentNumber: "",
                                 }
                 )
@@ -196,7 +193,10 @@ parseInput = \inputLines ->
 makeListOfAgacentCords : Nat, Cords -> List Cords
 makeListOfAgacentCords = \number, cords ->
     startX = cords.x - (Num.toStr number |> Str.graphemes |> List.len |> Num.toI32)
-    List.range { start: At startX, end: At cords.x }
+
+    # dbg List.range { start: At startX, end: Before cords.x }
+
+    List.range { start: At startX, end: Before cords.x }
     |> List.map (\x -> { x: x, y: cords.y })
     |> List.map generateCordsAroundPoint
     |> List.join
@@ -215,3 +215,6 @@ generateCordsAroundPoint = \cords -> [
     { x: cords.x - 1, y: cords.y },
     # W
 ]
+
+# Too High 528131
+# TOO low 519861
