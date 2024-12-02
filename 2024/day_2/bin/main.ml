@@ -39,6 +39,37 @@ let is_report_safe problem_limit report =
   let is_safe = is_increasing problem_limit report || is_decreasing problem_limit report  in
   is_safe
 
+
+
+let remove_at_index lst index =
+  let rec remove i acc = function
+    | [] -> List.rev acc  (* Reverse the accumulated list to maintain order *)
+    | x :: xs ->
+        if i = index then
+          List.rev_append acc xs  (* Skip the current element and append the rest *)
+        else
+          remove (i + 1) (x :: acc) xs  (* Include the current element and continue *)
+  in
+  remove 0 [] lst
+
+
+let generate_alterative_reports report =
+  List.mapi (fun i _ -> remove_at_index report i ) report
+
+
+let identity x = x
+
+let any lst =
+  List.filter identity lst |> List.length > 0
+
+let is_report_mostly_safe report =
+  if is_report_safe 0 report then
+    true
+  else
+    let alternative_reports = generate_alterative_reports report in
+      List.map (is_report_safe 0) alternative_reports |> any
+
+
 (* Part 1 test *)
 let () = read_file "data/example.txt"
   |> build_reports
@@ -58,7 +89,7 @@ let () = read_file "data/input.txt"
 (* Part 2 test *)
 let () = read_file "data/example.txt"
   |> build_reports
-  |> List.filter (is_report_safe 1)
+  |> List.filter is_report_mostly_safe
   |> List.length
   |> string_of_int
   |> print_endline
@@ -66,7 +97,7 @@ let () = read_file "data/example.txt"
 (* Part 2 *)
 let () = read_file "data/input.txt"
   |> build_reports
-  |> List.filter (is_report_safe 1)
+  |> List.filter is_report_mostly_safe
   |> List.length
   |> string_of_int
   |> print_endline
