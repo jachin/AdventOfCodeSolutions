@@ -18,16 +18,16 @@ let find_next_instruction input start  =
   let ins = Str.matched_group 0 input in
   match ins with
     | "do()" ->
-        let () = print_endline "do" in
+        (* let () = print_endline "do" in *)
         (Do, Str.match_end ())
 
     | "don't()" ->
-      let () = print_endline "don't()" in
+      (* let () = print_endline "don't()" in *)
       (Dont, Str.match_end ())
     | _ ->
         let x = Str.matched_group 1 input in
         let y = Str.matched_group 2 input in
-        let () = print_endline ("(" ^ x ^ "," ^ y ^ ")") in
+        (* let () = print_endline ("(" ^ x ^ "," ^ y ^ ")") in *)
         (Multiply (int_of_string x, int_of_string y ), Str.match_end ())
 
 let search_instructions input =
