@@ -106,14 +106,17 @@ let swap_pages manual_update page_a page_b =
   match manual_update with
     Update pages ->
       let p = Array.of_list pages in
-      let page_a_i = BatArray.findi (fun x -> x = page_a) p in
-      let page_b_i = BatArray.findi (fun x -> x = page_b) p in
-      Array.set p page_b_i page_a;
-      Array.set p page_a_i page_b;
-      Update (Array.to_list p)
+      if Array.exists (fun x -> x = page_a) p && Array.exists (fun x -> x = page_b) p then
+        let page_a_i = BatArray.findi (fun x -> x = page_a) p in
+        let page_b_i = BatArray.findi (fun x -> x = page_b) p in
+        Array.set p page_b_i page_a;
+        Array.set p page_a_i page_b;
+        Update (Array.to_list p)
+      else
+        manual_update
 
 
-let apply_rule_fix manual_update rule =
+let maybe_apply_rule_fix manual_update rule =
   if manual_update_passes_rule rule manual_update then
     manual_update
   else
@@ -122,19 +125,19 @@ let apply_rule_fix manual_update rule =
           swap_pages manual_update page_a page_b
 
 
-let rec fixer_helper rules manual_update =
-  let better = List.fold_left
-    (fun mc rule -> apply_rule_fix mc rule  )
+let rec fix_manual_update rules manual_update =
+  let improved_manual_update = List.fold_left
+    (fun mc rule -> maybe_apply_rule_fix mc rule)
     manual_update
     rules in
-  if manual_update_passes_rules rules better then
-    manual_update
+  if manual_update_passes_rules rules improved_manual_update then
+    improved_manual_update
   else
-    fixer_helper rules better
+    fix_manual_update rules improved_manual_update
 
 let fix_manual_updates rules manual_updates =
   manual_updates
-    |> List.map (fixer_helper rules)
+    |> List.map (fix_manual_update rules)
 
 let () = read_file "data/example.txt"
   |> parse_data
@@ -157,6 +160,17 @@ let () = read_file "data/input.txt"
 
 
 let () = read_file "data/example.txt"
+  |> parse_data
+  |> (fun data -> let (rules, manuals) = data in
+        filter_invalid_manual_updates rules manuals
+        |> fix_manual_updates rules
+      )
+      |> sum_middle_page_manual_updates
+      |> string_of_int
+      |> print_endline
+
+
+let () = read_file "data/input.txt"
   |> parse_data
   |> (fun data -> let (rules, manuals) = data in
         filter_invalid_manual_updates rules manuals
