@@ -1,2 +1,3 @@
 (test
- (name test_day_4))
+ (name test_day_4)
+ (libraries day_4 ounit2))
