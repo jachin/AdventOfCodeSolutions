@@ -1,33 +1,32 @@
 type t = char array array
 
-let create rows cols init =
-  Array.make_matrix rows cols init
-
-let get matrix row col =
-  matrix.(row).(col)
-
-let set matrix row col value =
-  matrix.(row).(col) <- value
+let create rows cols init = Array.make_matrix rows cols init
+let get matrix row col = matrix.(row).(col)
+let set matrix row col value = matrix.(row).(col) <- value
 
 let build_from_string input =
-  let lines = String.split_on_char '\n' input |> List.map String.trim |> List.filter (fun line -> line <> "") in
+  let lines =
+    String.split_on_char '\n' input
+    |> List.map String.trim
+    |> List.filter (fun line -> line <> "")
+  in
   let num_rows = List.length lines in
-  let num_cols = if num_rows > 0 then (String.length (List.hd lines)) else 0 in
+  let num_cols = if num_rows > 0 then String.length (List.hd lines) else 0 in
   let matrix = Array.make_matrix num_rows num_cols ' ' in
-  List.iteri (fun row line ->
-      String.iteri (fun col elem ->
-        matrix.(row).(col) <- elem
-      ) line
-    ) lines;
+  List.iteri
+    (fun row line ->
+      String.iteri (fun col elem -> matrix.(row).(col) <- elem) line)
+    lines;
   matrix
 
 let to_string matrix =
-  Array.fold_left (fun str_acc row ->
-    Array.fold_left (fun s_acc c -> s_acc ^ Printf.sprintf "%c" c) str_acc row ^ "\n"
-  ) "" matrix
+  Array.fold_left
+    (fun str_acc row ->
+      Array.fold_left (fun s_acc c -> s_acc ^ Printf.sprintf "%c" c) str_acc row
+      ^ "\n")
+    "" matrix
 
-let print matrix =
-  print_endline (to_string matrix)
+let print matrix = print_endline (to_string matrix)
 
 let is_in_bounds matrix row col =
   let num_rows = Array.length matrix in
@@ -45,9 +44,12 @@ let get_line matrix row1 col1 row2 col2 =
       else
         let e2 = err * 2 in
         let updated_err, new_x, new_y =
-          if e2 > -dy then (err - dy, x + sx, y) else (err, x, y) in
+          if e2 > -dy then (err - dy, x + sx, y) else (err, x, y)
+        in
         let updated_err, new_x, new_y =
-          if e2 < dx then (updated_err + dx, new_x, new_y + sy) else (updated_err, new_x, new_y) in
+          if e2 < dx then (updated_err + dx, new_x, new_y + sy)
+          else (updated_err, new_x, new_y)
+        in
         loop new_x new_y updated_err ((x, y) :: acc)
     in
     loop x0 y0 (dx - dy) []
@@ -59,8 +61,6 @@ let get_line matrix row1 col1 row2 col2 =
   else None
 
 let iter f matrix =
-  Array.iteri (fun rowi row ->
-      Array.iteri (fun coli char ->
-        f (rowi, coli) char
-      ) row
-  ) matrix
+  Array.iteri
+    (fun rowi row -> Array.iteri (fun coli char -> f (rowi, coli) char) row)
+    matrix
