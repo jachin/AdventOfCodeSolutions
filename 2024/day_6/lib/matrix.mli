@@ -1,10 +1,13 @@
 type t
+type space
 
-val create : int -> int -> char -> t
-val get : t -> int -> int -> char
-val set : t -> int -> int -> char -> unit
+val create : int -> int -> space -> t
+val get : t -> int -> int -> space
+val set : t -> int -> int -> space -> unit
 val build_from_string : string -> t
 val to_string : t -> string
 val print : t -> unit
-val get_line : t -> int -> int -> int -> int -> char list option
-val iter : (int * int -> char -> unit) -> t -> unit
+val get_line : t -> int -> int -> int -> int -> space list option
+val iter : (int * int -> space -> unit) -> t -> unit
+val find_guard : t -> ((int * int) * space) option
+val generate_next_matrix : t -> (t * (int * int)) option
