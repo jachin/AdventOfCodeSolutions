@@ -172,3 +172,10 @@ let generate_next_matrix matrix =
           | OffTheGrid -> None
           | _ -> raise (Invalid_argument "There should only be 1 gard"))
       | _ -> None)
+
+let deep_copy matrix = Array.map Array.copy matrix
+
+let copy_and_obstruct matrix (row, col) =
+  let new_matrix = deep_copy matrix in
+  set new_matrix row col Obstruction;
+  new_matrix
