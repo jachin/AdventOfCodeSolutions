@@ -44,13 +44,19 @@ let does_guard_loop matrix =
 
   let visited_spaced = BatDynArray.create () in
   let current_matrix = ref (Some matrix) in
+  let current_guard_cords = ref None in
   while Option.is_some !current_matrix && not (loop_detected visited_spaced) do
-    match Matrix.generate_next_matrix matrix with
-    | Some (next_matrix, guard_cords) ->
-        (* print_newline (Matrix.print next_matrix); *)
-        BatDynArray.add visited_spaced guard_cords;
-        current_matrix := Some next_matrix
-    | None -> current_matrix := None
+    try
+      let next_matrix, guard_cords =
+        Matrix.generate_next_matrix_2 matrix !current_guard_cords
+      in
+
+      current_guard_cords := Some guard_cords;
+      (* print_newline (Matrix.print next_matrix); *)
+      let cords, _ = guard_cords in
+      BatDynArray.add visited_spaced cords;
+      current_matrix := Some next_matrix
+    with Matrix.Off_the_grid -> current_matrix := None
   done;
   loop_detected visited_spaced
 

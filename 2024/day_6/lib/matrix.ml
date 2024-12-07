@@ -173,6 +173,68 @@ let generate_next_matrix matrix =
           | _ -> raise (Invalid_argument "There should only be 1 gard"))
       | _ -> None)
 
+exception Off_the_grid
+
+let generate_next_matrix_2 matrix maybe_guard_location =
+  let (row, col), g =
+    match maybe_guard_location with
+    | None -> (
+        match find_guard matrix with
+        | Some gl -> gl
+        | None -> raise Off_the_grid)
+    | Some gl -> gl
+  in
+  match g with
+  | GuardGoingUp -> (
+      let next_space = get_space matrix (row - 1) col in
+      match next_space with
+      | Empty ->
+          set matrix row col Empty;
+          set matrix (row - 1) col GuardGoingUp;
+          (matrix, ((row - 1, col), GuardGoingUp))
+      | Obstruction ->
+          set matrix row col GuardGoingRight;
+          (matrix, ((row, col), GuardGoingRight))
+      | OffTheGrid -> raise Off_the_grid
+      | _ -> raise (Invalid_argument "There should only be 1 gard"))
+  | GuardGoingRight -> (
+      let next_space = get_space matrix row (col + 1) in
+      match next_space with
+      | Empty ->
+          set matrix row col Empty;
+          set matrix row (col + 1) GuardGoingRight;
+          (matrix, ((row, col + 1), GuardGoingRight))
+      | Obstruction ->
+          set matrix row col GuardGoingDown;
+          (matrix, ((row, col), GuardGoingDown))
+      | OffTheGrid -> raise Off_the_grid
+      | _ -> raise (Invalid_argument "There should only be 1 gard"))
+  | GuardGoingDown -> (
+      let next_space = get_space matrix (row + 1) col in
+      match next_space with
+      | Empty ->
+          set matrix row col Empty;
+          set matrix (row + 1) col GuardGoingDown;
+          (matrix, ((row + 1, col), GuardGoingDown))
+      | Obstruction ->
+          set matrix row col GuardGoingLeft;
+          (matrix, ((row, col), GuardGoingLeft))
+      | OffTheGrid -> raise Off_the_grid
+      | _ -> raise (Invalid_argument "There should only be 1 gard"))
+  | GuardGoingLeft -> (
+      let next_space = get_space matrix row (col - 1) in
+      match next_space with
+      | Empty ->
+          set matrix row col Empty;
+          set matrix row (col - 1) GuardGoingLeft;
+          (matrix, ((row, col - 1), GuardGoingLeft))
+      | Obstruction ->
+          set matrix row col GuardGoingUp;
+          (matrix, ((row, col), GuardGoingUp))
+      | OffTheGrid -> raise Off_the_grid
+      | _ -> raise (Invalid_argument "There should only be 1 gard"))
+  | _ -> raise (Invalid_argument "Wat")
+
 let deep_copy matrix = Array.map Array.copy matrix
 
 let copy_and_obstruct matrix (row, col) =
