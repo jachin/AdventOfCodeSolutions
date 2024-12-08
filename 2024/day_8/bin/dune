@@ -1,0 +1,7 @@
+(executable
+ (public_name day_8)
+ (name main)
+ (libraries day_8 minttea))
+ (env
+   (dev
+     (flags (:standard -w -66))))
