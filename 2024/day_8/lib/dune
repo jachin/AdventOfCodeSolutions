@@ -1,3 +1,4 @@
 (library
  (name day_8)
+ (libraries batteries)
  (modules file_helpers matrix))

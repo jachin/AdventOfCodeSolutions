@@ -1,10 +1,10 @@
-type space = Empty | Antennas of char | OffTheGrid
+type space = Empty | Antenna of char | OffTheGrid
 type t = space array array
 
 let char_of_space s =
-  match s with Empty -> '.' | Antennas char -> char | OffTheGrid -> '!'
+  match s with Empty -> '.' | Antenna char -> char | OffTheGrid -> '!'
 
-let space_of_char c = match c with '.' -> Empty | char -> Antennas char
+let space_of_char c = match c with '.' -> Empty | char -> Antenna char
 let create rows cols init = Array.make_matrix rows cols init
 
 [@@@ocaml.warning "-32"]
@@ -77,9 +77,21 @@ let iter f matrix =
     (fun rowi row -> Array.iteri (fun coli char -> f (rowi, coli) char) row)
     matrix
 
+let manhattan_distance (x1, y1) (x2, y2) = abs (x2 - x1) + abs (y2 - y1)
+
 let get_space matrix row col =
   try get matrix row col with Invalid_argument _ -> OffTheGrid
 
 exception Off_the_grid
 
 let deep_copy matrix = Array.map Array.copy matrix
+
+let find_antennas matrix =
+  let acc = BatDynArray.create () in
+  iter
+    (fun cords current_space ->
+      match current_space with
+      | Antenna c -> BatDynArray.add acc (c, cords)
+      | _ -> ())
+    matrix;
+  BatDynArray.to_list acc
