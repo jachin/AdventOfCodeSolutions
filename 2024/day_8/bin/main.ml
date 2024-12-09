@@ -4,6 +4,7 @@ open Day_8
 type puzzle = Part1Example | Part1 | Part2Example | Part2
 type cords = int * int
 type antenna = Antenna of (char * cords)
+type antinodes = Antinodes of (char * cords)
 
 type model = {
   puzzle : puzzle;
@@ -11,6 +12,7 @@ type model = {
   example_input : string;
   input : string;
   antennas : antenna list;
+  antinodes : antinodes list;
   map : Matrix.t;
 }
 
@@ -33,7 +35,7 @@ let get_antenna_canidates antennas antenna =
 
 let is_antinode d1 d2 = d1 / 2 = d2 || d2 / 2 = d1
 
-let count_antinodes_at_cords_for_an_antenna cords antenna antennas =
+let is_antinode_at_cords_for_an_antenna cords antenna antennas =
   let antenna_cords = get_antenna_cords antenna in
   let distance = Matrix.manhattan_distance cords antenna_cords in
   let antenna_canidates = get_antenna_canidates antennas antenna in
@@ -44,14 +46,17 @@ let count_antinodes_at_cords_for_an_antenna cords antenna antennas =
         Matrix.manhattan_distance antenna_canidate_cords antenna_cords)
       antenna_canidates
   in
-  let antinodes = List.filter (is_antinode distance) distances_to_canidates in
-  List.length antinodes
+  List.filter (is_antinode distance) distances_to_canidates
+  |> List.is_empty |> not
 
 let find_antinodes_at_cords cords antennas =
   List.map
     (fun antenna ->
-      count_antinodes_at_cords_for_an_antenna cords antenna antennas)
+      if is_antinode_at_cords_for_an_antenna cords antenna antennas then
+        Some (Antinodes (get_antenna_label antenna, cords))
+      else None)
     antennas
+  |> List.filter_map (fun opt -> opt)
 
 let build_matrix input = Matrix.build_from_string input
 
@@ -65,7 +70,7 @@ let find_antinodes matrix antennas =
       find_antinodes_at_cords cords antennas |> fun a ->
       BatDynArray.add antinodes a)
     matrix;
-  BatDynArray.to_list antinodes
+  BatDynArray.to_list antinodes |> List.concat |> BatList.unique
 
 let solve_part_1 antinodes = List.length antinodes
 
@@ -76,6 +81,7 @@ let initial_model =
     example_input = File_helpers.read_file "./data/example.txt";
     input = File_helpers.read_file "./data/input.txt";
     antennas = [];
+    antinodes = [];
     map = Matrix.build_from_string "";
   }
 
@@ -121,7 +127,7 @@ let update event model =
         | Part1 -> Some (solve_part_1 antinodes)
         | _ -> None
       in
-      ({ model with answer; map; antennas }, Command.Noop)
+      ({ model with answer; map; antennas; antinodes }, Command.Noop)
   | _ -> (model, Command.Noop)
 
 let view model =
@@ -144,6 +150,13 @@ let view model =
            | Antenna (c, (row, col)) -> Printf.sprintf "%c (%i, %i)" c row col)
     |> String.concat " | "
   in
+  let antinodes =
+    model.antinodes
+    |> List.map (fun a ->
+           match a with
+           | Antinodes (c, (row, col)) -> Printf.sprintf "%c (%i, %i)" c row col)
+    |> String.concat "  "
+  in
   Format.sprintf
     {|
 
@@ -154,6 +167,8 @@ Press q to quit.
 
 Antennas: %s
 
+Antinodes: %s
+
 Map
 ---
 %s
@@ -161,7 +176,7 @@ Map
 Answer: %s
 
   |}
-    options antennas
+    options antennas antinodes
     (Matrix.to_string model.map)
     (match model.answer with Some a -> string_of_int a | None -> "???")
 
