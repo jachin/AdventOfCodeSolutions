@@ -1,4 +1,4 @@
 (executable
  (public_name day_9)
  (name main)
- (libraries day_9 Cmdliner))
+ (libraries day_9 cmdliner logs fmt fmt.cli fmt.tty logs.fmt logs.cli))

@@ -1,28 +1,22 @@
 open Cmdliner
 
-type verbosity = Verbose | Quiet
+let setup_log style_renderer level =
+  Fmt_tty.setup_std_outputs ?style_renderer ();
+  Logs.set_level level;
+  Logs.set_reporter (Logs_fmt.reporter ());
+  ()
 
-let verb =
-  let quiet =
-    let doc = "Just show the answers." in
-    (Quiet, Arg.info [ "q"; "quiet"; "silent" ] ~doc)
-  in
-  let verbose =
-    let doc = "Including debugging information." in
-    (Verbose, Arg.info [ "v"; "verbose" ] ~doc)
-  in
-  Arg.(last & vflag_all [ Quiet ] [ quiet; verbose ])
+let part_1_example () =
+  print_endline "Part 1 Example!!!";
+  Logs.info (fun m -> m "Part 1 Example - Verbose mode.");
+  Logs.err (fun m -> m "Beeb Boop.")
 
-let part_1_example () = print_endline "Part 1 Example"
-let part_1_example_t = Term.(const part_1_example $ const ())
+let setup_log =
+  Term.(const setup_log $ Fmt_cli.style_renderer () $ Logs_cli.level ())
 
-let cmd =
-  let doc = "Advent of Code - Day 9" in
-  let man =
-    [ `S Manpage.s_bugs; `P "EMail bug reports to jachin@jachin.rupe.name." ]
-  in
-  let info = Cmd.info "day_9" ~version:"%‌%VERSION%%" ~doc ~man in
-  Cmd.v info part_1_example_t
+let main () =
+  let info = Cmd.info "day_9" in
+  let cmd = Cmd.v info Term.(const part_1_example $ setup_log) in
+  exit (Cmd.eval cmd)
 
-let main () = exit (Cmd.eval cmd)
 let () = main ()
