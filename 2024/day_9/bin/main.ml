@@ -23,7 +23,7 @@ let build_disk_map input_data =
     input_data;
   disk_map
 
-let defrag disk_map =
+let frag disk_map =
   BatDynArray.(
     let right_pointer = ref (length disk_map - 1) in
     BatDynArray.iteri
@@ -36,10 +36,13 @@ let defrag disk_map =
               while get disk_map !right_pointer = "." && !right_pointer > 0 do
                 right_pointer := !right_pointer - 1
               done;
-              let t = get disk_map !right_pointer in
-              set disk_map !right_pointer ".";
-              set disk_map i t;
-              right_pointer := !right_pointer - 1
+              let time_to_stop = i > !right_pointer in
+              if not time_to_stop then (
+                let t = get disk_map !right_pointer in
+                set disk_map !right_pointer ".";
+                set disk_map i t;
+                right_pointer := !right_pointer - 1)
+              else ()
           | _ -> ()
         else ())
       disk_map);
@@ -82,7 +85,7 @@ let solve_part_1 input =
   |> info_log_passthrough "Input Data Ingested"
   |> build_disk_map |> print_disk_map
   |> info_log_passthrough "Disk map built"
-  |> defrag |> print_disk_map |> calculate_checksum |> string_of_int
+  |> frag |> print_disk_map |> calculate_checksum |> string_of_int
   |> print_endline
 
 let part_1_example () =
