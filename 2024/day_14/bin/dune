@@ -1,0 +1,4 @@
+(executable
+ (public_name day_14)
+ (name main)
+ (libraries day_14 batteries))
