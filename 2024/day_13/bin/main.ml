@@ -102,7 +102,22 @@ let solve_part_1 input =
 
 let solve_part_2 input =
   Logs.info (fun m -> m "Solving part 2");
-  let result = parse_machine_str input in
+  let result =
+    input |> parse_input
+    |> List.filter_map (fun x -> x)
+    |> List.map (fun m ->
+           let prize =
+             {
+               point_x = m.prize.point_x + 10000000000000;
+               point_y = m.prize.point_y + 10000000000000;
+             }
+           in
+           { m with prize })
+    |> List.map solve_claw_machine
+    |> List.filter_map (fun x -> x)
+    |> List.map count_tokens |> List.fold_left ( + ) 0 |> string_of_int
+    |> print_endline
+  in
   ignore result;
   ()
 
