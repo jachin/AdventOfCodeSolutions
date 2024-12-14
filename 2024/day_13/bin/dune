@@ -1,0 +1,4 @@
+(executable
+ (public_name day_13)
+ (name main)
+ (libraries day_13 batteries cmdliner logs fmt fmt.cli fmt.tty logs.fmt logs.cli))
