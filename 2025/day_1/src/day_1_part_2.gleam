@@ -28,42 +28,34 @@ fn parse_rotation_string(str) -> Option(Rotation) {
   }
 }
 
-fn turn_helper(dial_state: Int, rotation: Rotation) -> Int {
+fn turn_helper(state: #(Int, Int), rotation: Rotation) -> #(Int, Int) {
+  let #(dial_state, zeros) = state
   case rotation {
     Left(n) ->
       case n {
-        0 -> dial_state
+        0 -> state
         _ ->
           case int.compare(dial_state - 1, 0) {
-            order.Lt -> turn_helper(99, Left(n - 1))
-            order.Eq -> turn_helper(dial_state - 1, Left(n - 1))
-            order.Gt -> turn_helper(dial_state - 1, Left(n - 1))
+            order.Lt -> turn_helper(#(99, zeros), Left(n - 1))
+            order.Eq -> turn_helper(#(dial_state - 1, zeros + 1), Left(n - 1))
+            order.Gt -> turn_helper(#(dial_state - 1, zeros), Left(n - 1))
           }
       }
     Right(n) ->
       case n {
-        0 -> dial_state
+        0 -> state
         _ ->
           case int.compare(dial_state + 1, 99) {
-            order.Lt -> turn_helper(dial_state + 1, Right(n - 1))
-            order.Eq -> turn_helper(dial_state + 1, Right(n - 1))
-            order.Gt -> turn_helper(0, Right(n - 1))
+            order.Lt -> turn_helper(#(dial_state + 1, zeros), Right(n - 1))
+            order.Eq -> turn_helper(#(dial_state + 1, zeros), Right(n - 1))
+            order.Gt -> turn_helper(#(0, zeros + 1), Right(n - 1))
           }
       }
   }
 }
 
-fn turn(dial_state: Int, rotation: Rotation) -> Int {
-  turn_helper(dial_state, rotation)
-}
-
-fn turn_to_zero(state: #(Int, Int), rotation: Rotation) -> #(Int, Int) {
-  let #(dial_state, zeros) = state
-  let new_dial_state = turn(dial_state, rotation)
-  case new_dial_state {
-    0 -> #(new_dial_state, zeros + 1)
-    _ -> #(new_dial_state, zeros)
-  }
+fn turns_past_zero(state: #(Int, Int), rotation: Rotation) -> #(Int, Int) {
+  turn_helper(state, rotation)
 }
 
 pub fn main() -> Nil {
@@ -78,7 +70,7 @@ pub fn main() -> Nil {
     |> list.map(parse_rotation_string)
     |> option.values
 
-  let #(_, zeros) = list.fold(rotations, #(50, 0), turn_to_zero)
+  let #(_, zeros) = list.fold(rotations, #(50, 0), turns_past_zero)
 
   io.println("Hello from day_1! " <> int.to_string(zeros))
 }
