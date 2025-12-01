@@ -1,0 +1,57 @@
+{
+  "lockfile_version": "1",
+  "packages": {
+    "github:NixOS/nixpkgs/nixpkgs-unstable": {
+      "last_modified": "2025-11-18T11:19:29Z",
+      "resolved": "github:NixOS/nixpkgs/6f374686605df381de8541c072038472a5ea2e2d?lastModified=1763464769&narHash=sha256-AJHrsT7VoeQzErpBRlLJM1SODcaayp0joAoEA35yiwM%3D"
+    },
+    "gleam@latest": {
+      "last_modified": "2025-11-23T21:50:36Z",
+      "resolved": "github:NixOS/nixpkgs/ee09932cedcef15aaf476f9343d1dea2cb77e261#gleam",
+      "source": "devbox-search",
+      "version": "1.13.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/xslxz5pp5qn2fx4phbvjyflwdcqasddr-gleam-1.13.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/xslxz5pp5qn2fx4phbvjyflwdcqasddr-gleam-1.13.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/inzxz1gka9d68v1y9wxxv06md3qafnqw-gleam-1.13.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/inzxz1gka9d68v1y9wxxv06md3qafnqw-gleam-1.13.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/fx9yjh6dyrykbd6ksf1c5dr1sg5wz3xk-gleam-1.13.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/fx9yjh6dyrykbd6ksf1c5dr1sg5wz3xk-gleam-1.13.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/wp6fgsrp70ff481mfx6fdwgyl9893dlm-gleam-1.13.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/wp6fgsrp70ff481mfx6fdwgyl9893dlm-gleam-1.13.0"
+        }
+      }
+    }
+  }
+}
