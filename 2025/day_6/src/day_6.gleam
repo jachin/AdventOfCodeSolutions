@@ -1,11 +1,9 @@
 import gleam/int
 import gleam/io
 import gleam/list
-import gleam/pair
 import gleam/result
 import gleam/string
 import gleam/yielder
-import glearray
 import stdin
 
 fn parse_lines(str: String) {
