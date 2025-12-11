@@ -140,7 +140,7 @@ fn find_multiple_worlds(manifold: TachyonManifold) -> Int {
 
   list.index_map(first, fn(r, i) {
     case r {
-      Start -> find_multiple_worlds_helper(rest, i, 0)
+      Start -> find_multiple_worlds_helper(rest, [i], 1, 0)
       _ -> 0
     }
   })
@@ -149,34 +149,39 @@ fn find_multiple_worlds(manifold: TachyonManifold) -> Int {
 
 fn find_multiple_worlds_helper(
   manifold: TachyonManifold,
-  beam_index: Int,
+  beam_indexes: List(Int),
+  count: Int,
   depth: Int,
 ) -> Int {
-  // echo #(depth, beam_index)
+  echo depth
+  echo beam_indexes
   case list.first(manifold), list.rest(manifold) {
     Error(Nil), Error(Nil) -> {
-      1
+      count
     }
     Ok(row), Ok(rest) -> {
-      case at(row, beam_index) {
-        Start -> 0
-        Empty -> 0
-        Splitter -> 0
-        SplitBeam ->
-          find_multiple_worlds_helper(rest, beam_index - 1, depth + 1)
-          + find_multiple_worlds_helper(rest, beam_index + 1, depth + 1)
-        Beam -> find_multiple_worlds_helper(rest, beam_index, depth + 1)
-        Off -> 0
-      }
+      let count_and_new_beam_indexes =
+        list.fold(beam_indexes, #(0, []), fn(c, beam_index) {
+          case at(row, beam_index) {
+            SplitBeam -> #(
+              c.0 + 2,
+              list.append(c.1, [beam_index - 1, beam_index + 1]),
+            )
+            Beam -> #(c.0, list.append(c.1, [beam_index]))
+            _ -> c
+          }
+        })
+      let row_count = count_and_new_beam_indexes.0
+      let new_beam_indexes = count_and_new_beam_indexes.1 |> list.unique
+      find_multiple_worlds_helper(
+        rest,
+        new_beam_indexes,
+        row_count + count,
+        depth + 1,
+      )
     }
-    Ok(row), Error(Nil) -> {
-      case at(row, beam_index) {
-        SplitBeam -> 0
-        Beam -> 1
-        _ -> 0
-      }
-    }
-    _, _ -> 0
+    Ok(_), Error(Nil) -> count
+    _, _ -> count
   }
 }
 
