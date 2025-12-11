@@ -92,7 +92,6 @@ fn get_window(i: Int, prev: List(Region), current: List(Region)) -> List(Region)
 fn next_step_helper(prev: List(Region), current: List(Region)) -> List(Region) {
   list.index_map(current, fn(_, i) {
     let window = get_window(i, prev, current)
-    echo window
     case window {
       [_, _, _, _, Start, _] -> Start
       [_, Start, _, _, Empty, _] -> Beam
@@ -113,16 +112,11 @@ fn next_step(
 ) -> TachyonManifold {
   case i {
     0 -> {
-      // echo "first row"
       [current_row]
     }
     _ -> {
-      // echo "not first row"
-      // echo current_row
       case list.last(new_manifold) {
         Ok(last_step) -> {
-          //echo "last step"
-          //echo last_step
           list.append(new_manifold, [
             next_step_helper(last_step, current_row),
           ])
@@ -137,6 +131,52 @@ fn is_beam_split(r: List(Region)) -> Bool {
   case r {
     [Beam, SplitBeam, Beam] -> True
     _ -> False
+  }
+}
+
+fn find_multiple_worlds(manifold: TachyonManifold) -> Int {
+  let first = list.first(manifold) |> result.unwrap([])
+  let rest = list.rest(manifold) |> result.unwrap([])
+
+  list.index_map(first, fn(r, i) {
+    case r {
+      Start -> find_multiple_worlds_helper(rest, i, 0)
+      _ -> 0
+    }
+  })
+  |> int.sum
+}
+
+fn find_multiple_worlds_helper(
+  manifold: TachyonManifold,
+  beam_index: Int,
+  depth: Int,
+) -> Int {
+  // echo #(depth, beam_index)
+  case list.first(manifold), list.rest(manifold) {
+    Error(Nil), Error(Nil) -> {
+      1
+    }
+    Ok(row), Ok(rest) -> {
+      case at(row, beam_index) {
+        Start -> 0
+        Empty -> 0
+        Splitter -> 0
+        SplitBeam ->
+          find_multiple_worlds_helper(rest, beam_index - 1, depth + 1)
+          + find_multiple_worlds_helper(rest, beam_index + 1, depth + 1)
+        Beam -> find_multiple_worlds_helper(rest, beam_index, depth + 1)
+        Off -> 0
+      }
+    }
+    Ok(row), Error(Nil) -> {
+      case at(row, beam_index) {
+        SplitBeam -> 0
+        Beam -> 1
+        _ -> 0
+      }
+    }
+    _, _ -> 0
   }
 }
 
@@ -162,6 +202,8 @@ pub fn main() -> Nil {
     |> int.sum
 
   echo a
+
+  echo find_multiple_worlds(manifold)
 
   io.println("")
 }
