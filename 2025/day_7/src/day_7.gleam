@@ -162,12 +162,13 @@ fn find_multiple_worlds_helper(
     Ok(row), Ok(rest) -> {
       let count_and_new_beam_indexes =
         list.fold(beam_indexes, #(0, []), fn(c, beam_index) {
+          echo c
           case at(row, beam_index) {
             SplitBeam -> #(
               c.0 + 2,
-              list.append(c.1, [beam_index - 1, beam_index + 1]),
+              list.append(c.1, [beam_index - 1, beam_index + 1]) |> list.unique,
             )
-            Beam -> #(c.0, list.append(c.1, [beam_index]))
+            Beam -> #(c.0, list.append(c.1, [beam_index]) |> list.unique)
             _ -> c
           }
         })
