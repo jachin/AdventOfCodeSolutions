@@ -1,14 +1,17 @@
 import gleam/int
 import gleam/io
 import gleam/list
-import gleam/pair
 import gleam/result
 import gleam/string
 import gleam/yielder
+import gleamy/map
 import stdin
 
+type TachyonManifoldRow =
+  map.Map(Int, Region)
+
 type TachyonManifold =
-  List(List(Region))
+  List(TachyonManifoldRow)
 
 type Region {
   Start
@@ -19,12 +22,15 @@ type Region {
   Off
 }
 
-type PathNode {
-  PathNode(region: Region, cords: #(Int, Int))
+type Tachyon {
+  Tachyon(cords: #(Int, Int), id: Int)
 }
 
-fn parse_line(str: String) -> List(Region) {
-  str |> string.to_graphemes() |> list.map(grapheme_to_region)
+fn parse_line(str: String) -> TachyonManifoldRow {
+  str
+  |> string.to_graphemes()
+  |> list.index_map(fn(s, i) { #(i, grapheme_to_region(s)) })
+  |> map.from_list(int.compare)
 }
 
 fn grapheme_to_region(str: String) -> Region {
@@ -40,14 +46,16 @@ fn grapheme_to_region(str: String) -> Region {
 fn tachyon_manifold_to_string(t: TachyonManifold) -> String {
   t
   |> list.map(fn(r) {
-    list.map(r, fn(s) {
+    r
+    |> map.to_list
+    |> list.map(fn(s) {
       case s {
-        Empty -> "."
-        Start -> "S"
-        Splitter -> "^"
-        SplitBeam -> "↟"
-        Beam -> "|"
-        Off -> "O"
+        #(_, Empty) -> "."
+        #(_, Start) -> "S"
+        #(_, Splitter) -> "^"
+        #(_, SplitBeam) -> "↟"
+        #(_, Beam) -> "|"
+        #(_, Off) -> "O"
       }
     })
   })
@@ -56,62 +64,72 @@ fn tachyon_manifold_to_string(t: TachyonManifold) -> String {
   |> string.concat
 }
 
-fn at(l: List(Region), i: Int) -> Region {
-  list.split(l, i) |> pair.second |> list.first |> result.unwrap(Off)
-}
-
-fn get_window(i: Int, prev: List(Region), current: List(Region)) -> List(Region) {
-  case i, i < list.length(current) - 1 {
-    0, _ -> [
-      at(prev, i - 1),
-      at(prev, i),
-      at(prev, i + 1),
-      Off,
-      at(current, i),
-      at(current, i + 1),
-    ]
+fn get_window(
+  i: Int,
+  prev: map.Map(Int, Region),
+  current: map.Map(Int, Region),
+) -> List(Region) {
+  case i, i < map.count(current) - 1 {
+    0, _ ->
+      [
+        map.get(prev, i - 1),
+        map.get(prev, i),
+        map.get(prev, i + 1),
+        Ok(Off),
+        map.get(current, i),
+        map.get(current, i + 1),
+      ]
+      |> result.values
     _, True -> {
       [
-        at(prev, i - 1),
-        at(prev, i),
-        at(prev, i + 1),
-        at(current, i - 1),
-        at(current, i),
-        at(current, i + 1),
+        map.get(prev, i - 1),
+        map.get(prev, i),
+        map.get(prev, i + 1),
+        map.get(current, i - 1),
+        map.get(current, i),
+        map.get(current, i + 1),
       ]
+      |> result.values
     }
     _, False -> {
       [
-        at(prev, i - 1),
-        at(prev, i),
-        at(prev, i + 1),
-        at(current, i - 1),
-        at(current, i),
-        Off,
+        map.get(prev, i - 1),
+        map.get(prev, i),
+        map.get(prev, i + 1),
+        map.get(current, i - 1),
+        map.get(current, i),
+        Ok(Off),
       ]
+      |> result.values
     }
   }
 }
 
-fn next_step_helper(prev: List(Region), current: List(Region)) -> List(Region) {
-  list.index_map(current, fn(_, i) {
+fn next_step_helper(
+  prev: map.Map(Int, Region),
+  current: map.Map(Int, Region),
+) -> map.Map(Int, Region) {
+  current
+  |> map.to_list
+  |> list.index_map(fn(_, i) {
     let window = get_window(i, prev, current)
     case window {
-      [_, _, _, _, Start, _] -> Start
-      [_, Start, _, _, Empty, _] -> Beam
-      [_, Beam, _, _, Empty, _] -> Beam
-      [_, Empty, _, _, Splitter, _] -> Splitter
-      [_, Beam, _, _, Splitter, _] -> SplitBeam
-      [_, Empty, Beam, _, Empty, Splitter] -> Beam
-      [Beam, _, _, Splitter, Empty, _] -> Beam
-      _ -> Empty
+      [_, _, _, _, Start, _] -> #(i, Start)
+      [_, Start, _, _, Empty, _] -> #(i, Beam)
+      [_, Beam, _, _, Empty, _] -> #(i, Beam)
+      [_, Empty, _, _, Splitter, _] -> #(i, Splitter)
+      [_, Beam, _, _, Splitter, _] -> #(i, SplitBeam)
+      [_, Empty, Beam, _, Empty, Splitter] -> #(i, Beam)
+      [Beam, _, _, Splitter, Empty, _] -> #(i, Beam)
+      _ -> #(i, Empty)
     }
   })
+  |> map.from_list(int.compare)
 }
 
 fn next_step(
   new_manifold: TachyonManifold,
-  current_row: List(Region),
+  current_row: map.Map(Int, Region),
   i: Int,
 ) -> TachyonManifold {
   case i {
@@ -131,61 +149,51 @@ fn next_step(
   }
 }
 
-fn is_beam_split(r: List(Region)) -> Bool {
+fn is_beam_split(r: List(#(Int, Region))) -> Bool {
   case r {
-    [Beam, SplitBeam, Beam] -> True
+    [#(_, Beam), #(_, SplitBeam), #(_, Beam)] -> True
     _ -> False
   }
 }
 
-fn path_walker(manifold: TachyonManifold) -> List(List(PathNode)) {
-  let first = list.first(manifold) |> result.unwrap([])
-  let rest = list.rest(manifold) |> result.unwrap([])
-
-  list.index_map(first, fn(r, i) {
-    case r {
-      Start -> walk_step(rest, [PathNode(Start, #(i, 0))], i, 0)
-      _ -> []
-    }
-  })
-  |> list.flatten
+fn is_start(_: Int, r: Region) {
+  case r {
+    Start -> True
+    _ -> False
+  }
 }
 
-fn walk_step(
-  manifold: TachyonManifold,
-  current_path: List(PathNode),
-  beam_index: Int,
-  depth: Int,
-) -> List(List(PathNode)) {
-  // echo #(beam_index, depth)
-  case list.first(manifold), list.rest(manifold) {
-    Error(Nil), Error(Nil) -> {
-      [current_path]
+fn path_walker(manifold: TachyonManifold) -> List(Tachyon) {
+  let first = list.first(manifold) |> result.unwrap(map.new(int.compare))
+  let rest = list.rest(manifold) |> result.unwrap([])
+
+  let initial_row =
+    map.filter(first, is_start)
+    |> fn(r) {
+      let assert Ok(#(i, _)) = r |> map.to_list |> list.first
+      [Tachyon(#(i, 0), 1)]
     }
-    Ok(row), Ok(rest) -> {
-      case at(row, beam_index) {
-        SplitBeam -> {
-          let splitter = PathNode(SplitBeam, cords: #(beam_index, depth))
-          let left = PathNode(Beam, cords: #(beam_index - 1, depth))
-          let right = PathNode(Beam, cords: #(beam_index + 1, depth))
-          let left_path = list.append(current_path, [splitter, left])
-          let right_path = list.append(current_path, [splitter, right])
-          list.append(
-            walk_step(rest, left_path, beam_index - 1, depth + 1),
-            walk_step(rest, right_path, beam_index + 1, depth + 1),
-          )
-        }
-        Beam -> {
-          let splitter = PathNode(Beam, cords: #(beam_index, depth))
-          let left_path = list.append(current_path, [splitter])
-          walk_step(rest, left_path, beam_index, depth + 1)
-        }
-        _ -> [current_path]
+
+  rest |> list.fold(initial_row, walk_step)
+}
+
+fn walk_step(tachyons: List(Tachyon), row: TachyonManifoldRow) -> List(Tachyon) {
+  echo tachyons |> list.length
+  tachyons
+  |> list.fold([], fn(ts, t) {
+    case map.get(row, t.cords.0) {
+      Ok(SplitBeam) -> {
+        let t1 = Tachyon(#(t.cords.0 - 1, t.cords.1 + 1), t.id)
+        let t2 = Tachyon(#(t.cords.0 + 1, t.cords.1 + 1), t.id + t.cords.0)
+        [t1, t2, ..ts]
       }
+      Ok(Beam) -> {
+        let t1 = Tachyon(#(t.cords.0, t.cords.1 + 1), t.id)
+        [t1, ..ts]
+      }
+      _ -> ts
     }
-    Ok(_), Error(Nil) -> []
-    _, _ -> []
-  }
+  })
 }
 
 pub fn main() -> Nil {
@@ -205,7 +213,9 @@ pub fn main() -> Nil {
   let a =
     manifold
     |> list.map(fn(row) {
-      list.window(row, 3) |> list.filter(is_beam_split) |> list.length
+      list.window(row |> map.to_list, 3)
+      |> list.filter(is_beam_split)
+      |> list.length
     })
     |> int.sum
 
