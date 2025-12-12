@@ -19,6 +19,10 @@ type Region {
   Off
 }
 
+type PathNode {
+  PathNode(region: Region, cords: #(Int, Int))
+}
+
 fn parse_line(str: String) -> List(Region) {
   str |> string.to_graphemes() |> list.map(grapheme_to_region)
 }
@@ -134,55 +138,53 @@ fn is_beam_split(r: List(Region)) -> Bool {
   }
 }
 
-fn find_multiple_worlds(manifold: TachyonManifold) -> Int {
+fn path_walker(manifold: TachyonManifold) -> List(List(PathNode)) {
   let first = list.first(manifold) |> result.unwrap([])
   let rest = list.rest(manifold) |> result.unwrap([])
 
   list.index_map(first, fn(r, i) {
     case r {
-      Start -> find_multiple_worlds_helper(rest, [i], 1, 0)
-      _ -> 0
+      Start -> walk_step(rest, [PathNode(Start, #(i, 0))], i, 0)
+      _ -> []
     }
   })
-  |> int.sum
+  |> list.flatten
 }
 
-fn find_multiple_worlds_helper(
+fn walk_step(
   manifold: TachyonManifold,
-  beam_indexes: List(Int),
-  count: Int,
+  current_path: List(PathNode),
+  beam_index: Int,
   depth: Int,
-) -> Int {
-  echo depth
-  echo beam_indexes
+) -> List(List(PathNode)) {
+  // echo #(beam_index, depth)
   case list.first(manifold), list.rest(manifold) {
     Error(Nil), Error(Nil) -> {
-      count
+      [current_path]
     }
     Ok(row), Ok(rest) -> {
-      let count_and_new_beam_indexes =
-        list.fold(beam_indexes, #(0, []), fn(c, beam_index) {
-          echo c
-          case at(row, beam_index) {
-            SplitBeam -> #(
-              c.0 + 2,
-              list.append(c.1, [beam_index - 1, beam_index + 1]) |> list.unique,
-            )
-            Beam -> #(c.0, list.append(c.1, [beam_index]) |> list.unique)
-            _ -> c
-          }
-        })
-      let row_count = count_and_new_beam_indexes.0
-      let new_beam_indexes = count_and_new_beam_indexes.1 |> list.unique
-      find_multiple_worlds_helper(
-        rest,
-        new_beam_indexes,
-        row_count + count,
-        depth + 1,
-      )
+      case at(row, beam_index) {
+        SplitBeam -> {
+          let splitter = PathNode(SplitBeam, cords: #(beam_index, depth))
+          let left = PathNode(Beam, cords: #(beam_index - 1, depth))
+          let right = PathNode(Beam, cords: #(beam_index + 1, depth))
+          let left_path = list.append(current_path, [splitter, left])
+          let right_path = list.append(current_path, [splitter, right])
+          list.append(
+            walk_step(rest, left_path, beam_index - 1, depth + 1),
+            walk_step(rest, right_path, beam_index + 1, depth + 1),
+          )
+        }
+        Beam -> {
+          let splitter = PathNode(Beam, cords: #(beam_index, depth))
+          let left_path = list.append(current_path, [splitter])
+          walk_step(rest, left_path, beam_index, depth + 1)
+        }
+        _ -> [current_path]
+      }
     }
-    Ok(_), Error(Nil) -> count
-    _, _ -> count
+    Ok(_), Error(Nil) -> []
+    _, _ -> []
   }
 }
 
@@ -209,7 +211,7 @@ pub fn main() -> Nil {
 
   echo a
 
-  echo find_multiple_worlds(manifold)
+  path_walker(manifold) |> list.length |> echo
 
   io.println("")
 }
