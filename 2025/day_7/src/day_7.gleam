@@ -1,3 +1,5 @@
+import gflambe
+import gleam/dict
 import gleam/int
 import gleam/io
 import gleam/list
@@ -8,7 +10,7 @@ import gleamy/map
 import stdin
 
 type TachyonManifoldRow =
-  map.Map(Int, Region)
+  dict.Dict(Int, Region)
 
 type TachyonManifold =
   List(TachyonManifoldRow)
@@ -30,7 +32,7 @@ fn parse_line(str: String) -> TachyonManifoldRow {
   str
   |> string.to_graphemes()
   |> list.index_map(fn(s, i) { #(i, grapheme_to_region(s)) })
-  |> map.from_list(int.compare)
+  |> dict.from_list()
 }
 
 fn grapheme_to_region(str: String) -> Region {
@@ -47,7 +49,7 @@ fn tachyon_manifold_to_string(t: TachyonManifold) -> String {
   t
   |> list.map(fn(r) {
     r
-    |> map.to_list
+    |> dict.to_list
     |> list.map(fn(s) {
       case s {
         #(_, Empty) -> "."
@@ -66,38 +68,38 @@ fn tachyon_manifold_to_string(t: TachyonManifold) -> String {
 
 fn get_window(
   i: Int,
-  prev: map.Map(Int, Region),
-  current: map.Map(Int, Region),
+  prev: dict.Dict(Int, Region),
+  current: dict.Dict(Int, Region),
 ) -> List(Region) {
-  case i, i < map.count(current) - 1 {
+  case i, i < dict.size(current) - 1 {
     0, _ ->
       [
-        map.get(prev, i - 1),
-        map.get(prev, i),
-        map.get(prev, i + 1),
         Ok(Off),
-        map.get(current, i),
-        map.get(current, i + 1),
+        dict.get(prev, i),
+        dict.get(prev, i + 1),
+        Ok(Off),
+        dict.get(current, i),
+        dict.get(current, i + 1),
       ]
       |> result.values
     _, True -> {
       [
-        map.get(prev, i - 1),
-        map.get(prev, i),
-        map.get(prev, i + 1),
-        map.get(current, i - 1),
-        map.get(current, i),
-        map.get(current, i + 1),
+        dict.get(prev, i - 1),
+        dict.get(prev, i),
+        dict.get(prev, i + 1),
+        dict.get(current, i - 1),
+        dict.get(current, i),
+        dict.get(current, i + 1),
       ]
       |> result.values
     }
     _, False -> {
       [
-        map.get(prev, i - 1),
-        map.get(prev, i),
-        map.get(prev, i + 1),
-        map.get(current, i - 1),
-        map.get(current, i),
+        dict.get(prev, i - 1),
+        dict.get(prev, i),
+        Ok(Off),
+        dict.get(current, i - 1),
+        dict.get(current, i),
         Ok(Off),
       ]
       |> result.values
@@ -106,11 +108,11 @@ fn get_window(
 }
 
 fn next_step_helper(
-  prev: map.Map(Int, Region),
-  current: map.Map(Int, Region),
-) -> map.Map(Int, Region) {
+  prev: dict.Dict(Int, Region),
+  current: dict.Dict(Int, Region),
+) -> dict.Dict(Int, Region) {
   current
-  |> map.to_list
+  |> dict.to_list
   |> list.index_map(fn(_, i) {
     let window = get_window(i, prev, current)
     case window {
@@ -124,12 +126,12 @@ fn next_step_helper(
       _ -> #(i, Empty)
     }
   })
-  |> map.from_list(int.compare)
+  |> dict.from_list()
 }
 
 fn next_step(
   new_manifold: TachyonManifold,
-  current_row: map.Map(Int, Region),
+  current_row: dict.Dict(Int, Region),
   i: Int,
 ) -> TachyonManifold {
   case i {
@@ -164,13 +166,13 @@ fn is_start(_: Int, r: Region) {
 }
 
 fn path_walker(manifold: TachyonManifold) -> List(Tachyon) {
-  let first = list.first(manifold) |> result.unwrap(map.new(int.compare))
+  let first = list.first(manifold) |> result.unwrap(dict.new())
   let rest = list.rest(manifold) |> result.unwrap([])
 
   let initial_row =
-    map.filter(first, is_start)
+    dict.filter(first, is_start)
     |> fn(r) {
-      let assert Ok(#(i, _)) = r |> map.to_list |> list.first
+      let assert Ok(#(i, _)) = r |> dict.to_list |> list.first
       [Tachyon(#(i, 0), 1)]
     }
 
@@ -181,7 +183,7 @@ fn walk_step(tachyons: List(Tachyon), row: TachyonManifoldRow) -> List(Tachyon) 
   echo tachyons |> list.length
   tachyons
   |> list.fold([], fn(ts, t) {
-    case map.get(row, t.cords.0) {
+    case dict.get(row, t.cords.0) {
       Ok(SplitBeam) -> {
         let t1 = Tachyon(#(t.cords.0 - 1, t.cords.1 + 1), t.id)
         let t2 = Tachyon(#(t.cords.0 + 1, t.cords.1 + 1), t.id + t.cords.0)
@@ -213,13 +215,22 @@ pub fn main() -> Nil {
   let a =
     manifold
     |> list.map(fn(row) {
-      list.window(row |> map.to_list, 3)
+      list.window(row |> dict.to_list, 3)
       |> list.filter(is_beam_split)
       |> list.length
     })
     |> int.sum
 
   echo a
+  // gflambe.apply(
+  //   fn() {
+  //     path_walker(manifold) |> list.length |> echo
+  //     io.println("")
+  //   },
+  //   [
+  //     gflambe.OutputFormat(gflambe.BrendanGregg),
+  //   ],
+  // )
 
   path_walker(manifold) |> list.length |> echo
 
