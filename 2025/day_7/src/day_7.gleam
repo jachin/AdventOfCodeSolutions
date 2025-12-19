@@ -165,6 +165,24 @@ fn is_start(_: Int, r: Region) {
   }
 }
 
+fn tally_tachyons(tachyons: List(Tachyon)) -> Int {
+  list.fold(tachyons, 0, fn(n, t) { t.id + n })
+}
+
+fn merge_tachyons_helper(tachyons: List(Tachyon)) -> Tachyon {
+  case tachyons {
+    [] -> Tachyon(#(0, 0), 0)
+    [t] -> t
+    [t, ..] -> Tachyon(t.cords, tally_tachyons(tachyons))
+  }
+}
+
+fn merge_tachyons(tachyons: List(Tachyon)) -> List(Tachyon) {
+  tachyons
+  |> list.chunk(fn(t) { t.cords.0 })
+  |> list.map(fn(ts) { merge_tachyons_helper(ts) })
+}
+
 fn path_walker(manifold: TachyonManifold) -> List(Tachyon) {
   let first = list.first(manifold) |> result.unwrap(dict.new())
   let rest = list.rest(manifold) |> result.unwrap([])
@@ -182,11 +200,12 @@ fn path_walker(manifold: TachyonManifold) -> List(Tachyon) {
 fn walk_step(tachyons: List(Tachyon), row: TachyonManifoldRow) -> List(Tachyon) {
   echo tachyons |> list.length
   tachyons
+  |> merge_tachyons
   |> list.fold([], fn(ts, t) {
     case dict.get(row, t.cords.0) {
       Ok(SplitBeam) -> {
         let t1 = Tachyon(#(t.cords.0 - 1, t.cords.1 + 1), t.id)
-        let t2 = Tachyon(#(t.cords.0 + 1, t.cords.1 + 1), t.id + t.cords.0)
+        let t2 = Tachyon(#(t.cords.0 + 1, t.cords.1 + 1), t.id)
         [t1, t2, ..ts]
       }
       Ok(Beam) -> {
@@ -232,7 +251,7 @@ pub fn main() -> Nil {
   //   ],
   // )
 
-  path_walker(manifold) |> list.length |> echo
+  path_walker(manifold) |> tally_tachyons |> echo
 
   io.println("")
 }
