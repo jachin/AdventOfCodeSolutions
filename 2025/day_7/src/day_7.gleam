@@ -1,4 +1,3 @@
-import gflambe
 import gleam/dict
 import gleam/int
 import gleam/io
@@ -6,7 +5,6 @@ import gleam/list
 import gleam/result
 import gleam/string
 import gleam/yielder
-import gleamy/map
 import stdin
 
 type TachyonManifoldRow =
